@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ChatGPT Assistant</title>
+</head>
+<body>
+    <h1>Test ChatGPT Assistant</h1>
+    <button onclick="testYesResponse()">Test "Yes" Response</button>
+    <button onclick="testNoResponse()">Test "No" Response</button>
+    <div id="result"></div>
+
+    <script>
+        async function testYesResponse() {
+            const result = await fetch('https://scagutbejvgicmllzqge.functions.supabase.co/chat-gpt-assistant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: "Yes, I will attend the meeting",
+                    customerName: "Akash Godishala", 
+                    customerPhone: "+16098039314"
+                })
+            });
+            const data = await result.json();
+            document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        async function testNoResponse() {
+            const result = await fetch('https://scagutbejvgicmllzqge.functions.supabase.co/chat-gpt-assistant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: "No, I cannot attend the meeting",
+                    customerName: "Akash Godishala",
+                    customerPhone: "+16098039314"
+                })
+            });
+            const data = await result.json();
+            document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+-- No additional database changes needed for ChatGPT integration

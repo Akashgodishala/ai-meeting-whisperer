@@ -1,0 +1,1 @@
+UPDATE retailer_profiles SET phone = '+16095088574' WHERE id = 'f1591cbc-9d36-416b-8d99-4ec37ceb2ee9'

@@ -1,0 +1,1 @@
+CREATE POLICY "Allow reading meeting responses" ON public.meeting_responses FOR SELECT TO anon, authenticated USING (true);
