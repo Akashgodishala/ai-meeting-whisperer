@@ -253,22 +253,42 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
               logStep("Customer SMS sent successfully");
             } else {
               // Fallback: direct Twilio API
-              const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${Deno.env.get("TWILIO_ACCOUNT_SID")}/Messages.json`;
-              const formData = new URLSearchParams();
-              formData.append('To', customer_phone);
-              formData.append('From', Deno.env.get("TWILIO_FROM_NUMBER") || '');
-              formData.append('Body', customerSms);
-              const twilioResp = await fetch(twilioUrl, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Basic ${btoa(`${Deno.env.get("TWILIO_ACCOUNT_SID")}:${Deno.env.get("TWILIO_AUTH_TOKEN")}`)}`,
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData,
-              });
-              if (twilioResp.ok) {
-                customerSmsSent = true;
-                logStep("Customer SMS sent via direct Twilio");
+              const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+              const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+              const fromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
+
+              if (!accountSid || !authToken || !fromNumber) {
+                // Avoid making malformed Twilio requests when credentials are missing
+                logStep("Customer SMS Twilio fallback not configured", {
+                  hasAccountSid: !!accountSid,
+                  hasAuthToken: !!authToken,
+                  hasFromNumber: !!fromNumber,
+                });
+              } else {
+                const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+                const formData = new URLSearchParams();
+                formData.append('To', customer_phone);
+                formData.append('From', fromNumber);
+                formData.append('Body', customerSms);
+
+                const twilioResp = await fetch(twilioUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                  },
+                  body: formData,
+                });
+
+                if (twilioResp.ok) {
+                  customerSmsSent = true;
+                  logStep("Customer SMS sent via direct Twilio");
+                } else {
+                  logStep("Customer SMS Twilio fallback failed", {
+                    status: twilioResp.status,
+                    statusText: twilioResp.statusText,
+                  });
+                }
               }
             }
           } catch (smsErr) {
