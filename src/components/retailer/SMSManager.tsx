@@ -11,6 +11,14 @@ import { RetailerSMSService } from "@/services/retailerSMSService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface SMSHistoryEntry {
+  status: string;
+  phone_number: string;
+  sent_at: string;
+  message: string;
+  error_message?: string;
+}
+
 interface SMSManagerProps {
   retailerId: string;
 }
@@ -23,7 +31,7 @@ const SMSManager: React.FC<SMSManagerProps> = ({ retailerId }) => {
   const [promotionalMessage, setPromotionalMessage] = useState('');
   const [customers, setCustomers] = useState<Array<{id: string, phone: string, name: string}>>([]);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
-  const [smsHistory, setSmsHistory] = useState<any[]>([]);
+  const [smsHistory, setSmsHistory] = useState<SMSHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

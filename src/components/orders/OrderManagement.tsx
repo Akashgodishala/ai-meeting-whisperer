@@ -49,7 +49,7 @@ interface Order {
   id: string;
   customer_phone: string;
   customer_name?: string;
-  items?: any;
+  items?: Record<string, unknown>[] | string | Record<string, unknown>;
   total_amount?: number;
   payment_status?: string;
   status?: string;
@@ -191,7 +191,7 @@ function OrderDetailDialog({
       if (Array.isArray(order.items)) return order.items;
       if (typeof order.items === "string") return JSON.parse(order.items);
       if (order.items && typeof order.items === "object") return [order.items];
-    } catch {}
+    } catch { /* ignored */ }
     return [];
   })();
 
@@ -227,14 +227,14 @@ function OrderDetailDialog({
                 <Package className="h-4 w-4 text-primary" /> Items
               </h4>
               <div className="space-y-2">
-                {items.map((item: any, idx: number) => (
+                {items.map((item: Record<string, unknown>, idx: number) => (
                   <div
                     key={idx}
                     className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
                   >
                     <div>
-                      <p className="text-sm font-medium text-foreground">{item.name || item.product || `Item ${idx + 1}`}</p>
-                      {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
+                      <p className="text-sm font-medium text-foreground">{String(item.name || item.product || `Item ${idx + 1}`)}</p>
+                      {item.notes && <p className="text-xs text-muted-foreground">{String(item.notes)}</p>}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-foreground">

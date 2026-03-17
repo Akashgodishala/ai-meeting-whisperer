@@ -162,7 +162,7 @@ export class AgentDataService {
           node_type: node.type,
           position_x: node.position.x,
           position_y: node.position.y,
-          node_data: node.data as any
+          node_data: node.data as Record<string, unknown>
         });
     }
 
@@ -247,8 +247,8 @@ export class AgentDataService {
 
   static async updateSession(sessionId: string, updates: {
     currentNodeId?: string;
-    sessionVariables?: Record<string, any>;
-    conversationHistory?: any[];
+    sessionVariables?: Record<string, unknown>;
+    conversationHistory?: Record<string, unknown>[];
     status?: string;
     endedAt?: string;
     totalDuration?: number;
@@ -300,7 +300,7 @@ export class AgentDataService {
     description: string;
     category: string;
     industry?: string;
-    templateConfig: any;
+    templateConfig: Record<string, unknown>;
     previewImageUrl?: string;
     isPublic?: boolean;
   }) {
@@ -338,7 +338,7 @@ export class AgentDataService {
   }
 
   // Transformation functions
-  private static transformDatabaseToAgent(data: any): VoiceAgent {
+  private static transformDatabaseToAgent(data: Record<string, unknown>): VoiceAgent {
     return {
       id: data.id,
       name: data.name,
@@ -376,14 +376,14 @@ export class AgentDataService {
         connections: [],
         startNodeId: 'start'
       },
-      channels: data.agent_channels?.map((ch: any): ChannelConfig => ({
+      channels: data.agent_channels?.map((ch: Record<string, unknown>): ChannelConfig => ({
         type: ch.channel_type,
         enabled: ch.enabled,
         settings: ch.settings,
         phoneNumbers: ch.phone_numbers,
         webhookUrl: ch.webhook_url
       })) || [],
-      integrations: data.agent_integrations?.map((int: any): IntegrationConfig => ({
+      integrations: data.agent_integrations?.map((int: Record<string, unknown>): IntegrationConfig => ({
         id: int.integration_id,
         type: int.integration_type,
         name: int.name,
@@ -397,7 +397,7 @@ export class AgentDataService {
         trackSentiment: data.track_sentiment,
         trackPerformance: data.track_performance
       },
-      businessRules: data.agent_business_rules?.map((rule: any): BusinessRule => ({
+      businessRules: data.agent_business_rules?.map((rule: Record<string, unknown>): BusinessRule => ({
         id: rule.id,
         name: rule.name,
         condition: rule.condition_rule,

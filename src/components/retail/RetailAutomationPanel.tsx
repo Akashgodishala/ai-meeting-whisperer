@@ -26,14 +26,14 @@ interface Customer {
   name: string;
   phone: string;
   email?: string;
-  preferences?: any;
+  preferences?: Record<string, unknown>;
 }
 
 interface AutomationCampaign {
   type: string;
   title: string;
   customers: Customer[];
-  data: any;
+  data: Record<string, unknown>;
   scheduledFor?: string;
 }
 
@@ -73,8 +73,8 @@ const AUTOMATION_TYPES = [
 export const RetailAutomationPanel: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [retailerCustomers, setRetailerCustomers] = useState<any[]>([]);
-  const [campaignData, setCampaignData] = useState<any>({});
+  const [retailerCustomers, setRetailerCustomers] = useState<Record<string, unknown>[]>([]);
+  const [campaignData, setCampaignData] = useState<Record<string, string>>({});
   const [isLaunching, setIsLaunching] = useState(false);
   const [activeTab, setActiveTab] = useState('setup');
 
@@ -123,9 +123,9 @@ export const RetailAutomationPanel: React.FC = () => {
 
   const loadFromRetailerCustomers = () => {
     const formattedCustomers = retailerCustomers.map(customer => ({
-      name: customer.name,
-      phone: customer.phone,
-      email: customer.email || ''
+      name: String(customer.name || ''),
+      phone: String(customer.phone || ''),
+      email: String(customer.email || '')
     }));
     setCustomers(formattedCustomers);
     toast({

@@ -61,7 +61,7 @@ export class RetailerSMSService {
     }
   }
 
-  async sendOrderConfirmationSMS(customerPhone: string, customerName: string, orderDetails: any): Promise<boolean> {
+  async sendOrderConfirmationSMS(customerPhone: string, customerName: string, orderDetails: Record<string, unknown>): Promise<boolean> {
     const message = `Hi ${customerName}! Your order from our store has been confirmed. Order #${orderDetails.id} - Total: $${orderDetails.total_amount}. ${orderDetails.payment_link_url ? `Pay here: ${orderDetails.payment_link_url}` : 'Thank you for your business!'}`;
     
     return this.sendCustomSMS({
@@ -137,7 +137,7 @@ export class RetailerSMSService {
     });
   }
 
-  async getSMSHistory(limit: number = 50): Promise<any[]> {
+  async getSMSHistory(limit: number = 50): Promise<Record<string, unknown>[]> {
     try {
       // TODO: Enable once Supabase types are updated
       // For now, return mock data

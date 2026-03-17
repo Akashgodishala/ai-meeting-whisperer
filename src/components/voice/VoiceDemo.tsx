@@ -10,8 +10,8 @@ interface VoiceDemoProps {
 
 declare global {
   interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+    SpeechRecognition: new () => SpeechRecognition;
   }
 }
 
@@ -51,7 +51,7 @@ const VoiceDemo: React.FC<VoiceDemoProps> = ({ onSpeakingChange }) => {
         onSpeakingChange?.(false);
       };
       
-      recognition.onresult = async (event: any) => {
+      recognition.onresult = async (event: SpeechRecognitionEvent) => {
         const speechResult = event.results[0][0].transcript;
         setTranscript(speechResult);
         setIsProcessing(true);

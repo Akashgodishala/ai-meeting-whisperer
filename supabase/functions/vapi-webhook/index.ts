@@ -22,7 +22,7 @@ function sanitizeString(str: string, maxLength: number): string {
 function validatePhoneNumber(phone: string): boolean {
   if (!phone) return false;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  return phoneRegex.test(phone.replace(/[\s\-()]/g, ''));
 }
 
 // VAPI webhook secret validation
@@ -229,9 +229,9 @@ serve(async (req) => {
         break;
 
       case 'call-ended':
-      case 'call.ended':
+      case 'call.ended': {
         console.log(`🏁 Call ended: ${callId}`);
-        
+
         const endTime = new Date().toISOString();
         const startTime = call.startedAt || call.createdAt;
         let duration = 0;
@@ -244,7 +244,7 @@ serve(async (req) => {
         let fullTranscript = '';
         if (call.messages && Array.isArray(call.messages)) {
           fullTranscript = call.messages
-            .map((msg: any) => `${msg.role || 'unknown'}: ${sanitizeString(msg.message || msg.content || '', 10000)}`)
+            .map((msg: Record<string, unknown>) => `${msg.role || 'unknown'}: ${sanitizeString((msg.message as string) || (msg.content as string) || '', 10000)}`)
             .join('\n');
         } else if (transcript) {
           fullTranscript = sanitizeString(transcript, 50000);
@@ -486,6 +486,7 @@ serve(async (req) => {
 
         console.log(`✅ Call session updated: ${callId} - Duration: ${duration}s`);
         break;
+      }
 
       case 'call-failed':
       case 'call.failed':

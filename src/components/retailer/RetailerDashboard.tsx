@@ -21,8 +21,8 @@ interface RetailerProfile {
   business_type: string;
   phone: string;
   address: string;
-  payment_methods: any;
-  operating_hours: any;
+  payment_methods: Record<string, unknown>;
+  operating_hours: Record<string, unknown>;
 }
 
 interface VoiceTransaction {
@@ -57,6 +57,22 @@ interface VoiceLink {
   sent_at: string;
 }
 
+interface RetailerOrder {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  total_amount: number;
+  items: Array<{ name: string; quantity?: number }>;
+  order_type: string;
+  status: string;
+  call_session_id?: string;
+  estimated_time?: string;
+  notes?: string;
+  payment_link_url?: string;
+  payment_status?: string;
+  created_at: string;
+}
+
 interface RetailerCustomer {
   id: string;
   name: string;
@@ -84,7 +100,7 @@ export function RetailerDashboard() {
   const [links, setLinks] = useState<VoiceLink[]>([]);
   const [customers, setCustomers] = useState<RetailerCustomer[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<RetailerOrder[]>([]);
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState("");
@@ -331,7 +347,7 @@ export function RetailerDashboard() {
     }
   };
 
-  const sendManualPaymentLink = async (order: any) => {
+  const sendManualPaymentLink = async (order: RetailerOrder) => {
     try {
       toast.success('🚀 Creating payment link...');
       
@@ -1207,7 +1223,7 @@ export function RetailerDashboard() {
                 <div className="flex gap-2">
                   <Input
                     placeholder="https://buy.stripe.com/your-payment-link"
-                    defaultValue={(profile.payment_methods as any)?.payment_link || ''}
+                    defaultValue={(profile.payment_methods as Record<string, unknown>)?.payment_link as string || ''}
                     id="payment-link-input"
                   />
                   <Button

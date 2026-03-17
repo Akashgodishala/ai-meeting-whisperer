@@ -29,7 +29,7 @@ interface CustomerResponseStatusProps {
 }
 
 const CustomerResponseStatus = ({ customerPhone }: CustomerResponseStatusProps) => {
-  const [latestResponse, setLatestResponse] = useState<any>(null);
+  const [latestResponse, setLatestResponse] = useState<{ response_type: string; response_message: string; created_at: string } | null>(null);
 
   useEffect(() => {
     if (!customerPhone) return;

@@ -434,7 +434,7 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({ channels, onChan
                     key={channelType.type}
                     variant="outline"
                     className="h-24 flex flex-col items-center gap-2 text-left"
-                    onClick={() => addChannel(channelType.type as any)}
+                    onClick={() => addChannel(channelType.type as ChannelConfig['type'])}
                   >
                     <div className={`p-2 rounded-full text-white ${channelType.color}`}>
                       <channelType.icon className="w-5 h-5" />
@@ -528,7 +528,7 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({ channels, onChan
   );
 };
 
-function getDefaultChannelSettings(type: ChannelConfig['type']): Record<string, any> {
+function getDefaultChannelSettings(type: ChannelConfig['type']): Record<string, unknown> {
   switch (type) {
     case 'voice':
       return {

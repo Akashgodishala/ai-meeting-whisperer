@@ -18,10 +18,19 @@ import {
   ExternalLink
 } from "lucide-react";
 
+interface SetupResult {
+  data?: {
+    webhook_configured?: boolean;
+    call_initiated?: boolean;
+    sms_sent?: boolean;
+  };
+  error?: { message: string };
+}
+
 export const RetailerVAPISetup = () => {
   const [testPhone, setTestPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [setupResult, setSetupResult] = useState<any>(null);
+  const [setupResult, setSetupResult] = useState<SetupResult | null>(null);
 
   const handleTestRetailerCall = async () => {
     if (!testPhone) {

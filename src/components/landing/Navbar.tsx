@@ -34,7 +34,7 @@ export function Navbar() {
             <Mic className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="font-heading text-xl font-bold text-foreground">
-            ​Voice  Assistant
+            Voice  Assistant
       
           </span>
         </a>

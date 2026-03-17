@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[PROFESSIONAL-VOICE-AGENT] ${step}${detailsStr}`);
 };
@@ -172,7 +172,7 @@ Respond professionally in ${LANGUAGES[language] || 'English'} and help complete 
         const isDelivery = message.toLowerCase().includes('delivery');
         
         // Calculate pricing
-        let subtotal = 45.00; // Placeholder - should calculate from actual items
+        const subtotal = 45.00; // Placeholder - should calculate from actual items
         const serviceFee = isDelivery ? 3.00 : 0;
         const driverTip = isDelivery ? 8.00 : 0; // Default tip
         const totalAmount = subtotal + serviceFee + driverTip;

@@ -100,7 +100,7 @@ function loadProfile(): BusinessProfile {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch { /* ignored */ }
   return {
     businessName: "",
     businessType: "",

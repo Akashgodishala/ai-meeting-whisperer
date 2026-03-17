@@ -40,7 +40,7 @@ function normalizePhoneNumber(phone: string): string {
 }
 
 // Enhanced retry logic with exponential backoff
-async function makeCallWithRetry(callData: any, attempt = 1): Promise<any> {
+async function makeCallWithRetry(callData: Record<string, unknown>, attempt = 1): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get('VAPI_API_KEY');
   
   try {

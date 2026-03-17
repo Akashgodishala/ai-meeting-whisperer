@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[RETAILER-ORDER-AGENT] ${step}${detailsStr}`);
 };
@@ -154,7 +154,7 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
           orderType = 'delivery';
 
           // Try to extract address from message
-          const addressMatch = message.match(/(?:address|to|deliver to)\s*[:\-]?\s*([^,.]+(?:,[^,.]+)*)/i);
+          const addressMatch = message.match(/(?:address|to|deliver to)\s*[:-]?\s*([^,.]+(?:,[^,.]+)*)/i);
           if (addressMatch) {
             deliveryAddress = addressMatch[1].trim();
           }

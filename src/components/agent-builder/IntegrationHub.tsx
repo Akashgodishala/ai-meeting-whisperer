@@ -89,10 +89,10 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({ integrations, on
 
     const newIntegration: IntegrationConfig = {
       id: `integration_${Date.now()}`,
-      type: newIntegrationType as any,
+      type: newIntegrationType as IntegrationConfig['type'],
       name: `New ${integrationTypes.find(it => it.type === newIntegrationType)?.label} Integration`,
       enabled: true,
-      config: getDefaultIntegrationConfig(newIntegrationType as any),
+      config: getDefaultIntegrationConfig(newIntegrationType as IntegrationConfig['type']),
       authType: 'api_key',
       credentials: {}
     };
@@ -173,7 +173,7 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({ integrations, on
             <Label>Authentication Type</Label>
             <Select
               value={selectedIntegration.authType}
-              onValueChange={(authType: any) => updateIntegration(selectedIntegration.id, { authType })}
+              onValueChange={(authType: string) => updateIntegration(selectedIntegration.id, { authType: authType as IntegrationConfig['authType'] })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -255,7 +255,7 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({ integrations, on
                       updateIntegration(selectedIntegration.id, {
                         config: { ...selectedIntegration.config, headers }
                       });
-                    } catch {}
+                    } catch { /* ignored */ }
                   }}
                   placeholder='{"Content-Type": "application/json"}'
                   rows={3}
@@ -505,7 +505,7 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({ integrations, on
   );
 };
 
-function getDefaultIntegrationConfig(type: IntegrationConfig['type']): Record<string, any> {
+function getDefaultIntegrationConfig(type: IntegrationConfig['type']): Record<string, unknown> {
   switch (type) {
     case 'crm':
       return {
