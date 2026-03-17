@@ -27,7 +27,7 @@ interface AgentTemplate {
   description: string;
   category: string;
   industry: string;
-  templateConfig: any;
+  templateConfig: Record<string, unknown>;
   previewImageUrl?: string;
   isPublic: boolean;
   isFeatured: boolean;
@@ -111,8 +111,8 @@ const featuredTemplates = [
 ];
 
 export const AgentMarketplace: React.FC = () => {
-  const [templates, setTemplates] = useState<AgentTemplate[]>(featuredTemplates as any);
-  const [filteredTemplates, setFilteredTemplates] = useState<AgentTemplate[]>(featuredTemplates as any);
+  const [templates, setTemplates] = useState<AgentTemplate[]>(featuredTemplates as AgentTemplate[]);
+  const [filteredTemplates, setFilteredTemplates] = useState<AgentTemplate[]>(featuredTemplates as AgentTemplate[]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
@@ -131,11 +131,11 @@ export const AgentMarketplace: React.FC = () => {
     setLoading(true);
     try {
       const data = await AgentDataService.getTemplates();
-      setTemplates([...featuredTemplates, ...data] as any);
+      setTemplates([...featuredTemplates, ...data] as AgentTemplate[]);
     } catch (error) {
       console.error('Error loading templates:', error);
       // Use featured templates if API fails
-      setTemplates(featuredTemplates as any);
+      setTemplates(featuredTemplates as AgentTemplate[]);
     } finally {
       setLoading(false);
     }
@@ -183,7 +183,7 @@ export const AgentMarketplace: React.FC = () => {
     setFilteredTemplates(filtered);
   };
 
-  const useTemplate = async (template: AgentTemplate) => {
+  const applyTemplate = async (template: AgentTemplate) => {
     try {
       // Increment usage count
       await AgentDataService.incrementTemplateUsage(template.id);
@@ -257,7 +257,7 @@ export const AgentMarketplace: React.FC = () => {
         </div>
 
         <Button 
-          onClick={() => useTemplate(template)}
+          onClick={() => applyTemplate(template)}
           className="w-full"
         >
           <Download className="w-4 h-4 mr-2" />

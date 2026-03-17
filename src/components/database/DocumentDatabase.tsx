@@ -18,7 +18,7 @@ interface DocumentChunk {
   page: number;
   chunk_id: number;
   content: string;
-  customer_data?: any;
+  customer_data?: Record<string, unknown>[];
   embedding?: number[];
   created_at: string;
 }

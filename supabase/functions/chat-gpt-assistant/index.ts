@@ -16,10 +16,10 @@ function sanitizeString(str: string, maxLength: number): string {
 function validatePhoneNumber(phone: string): boolean {
   if (!phone) return false;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  return phoneRegex.test(phone.replace(/[\s\-()]/g, ''));
 }
 
-function validateInput(input: any) {
+function validateInput(input: Record<string, unknown>) {
   return {
     question: sanitizeString(input?.question || '', 2000),
     customerName: sanitizeString(input?.customerName || 'Customer', 100),

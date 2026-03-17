@@ -75,7 +75,7 @@ export const FlexibleAgentAnalytics: React.FC<FlexibleAgentAnalyticsProps> = ({ 
   const [timeRange, setTimeRange] = useState('7d');
   const [selectedMetric, setSelectedMetric] = useState('calls');
 
-  const calculateChange = (data: any[], metric: string) => {
+  const calculateChange = (data: Record<string, number>[], metric: string) => {
     if (data.length < 2) return 0;
     const current = data[data.length - 1][metric];
     const previous = data[data.length - 2][metric];
@@ -88,7 +88,7 @@ export const FlexibleAgentAnalytics: React.FC<FlexibleAgentAnalyticsProps> = ({ 
     return <Activity className="w-4 h-4 text-gray-500" />;
   };
 
-  const MetricCard = ({ title, value, change, icon: Icon, suffix = '' }: any) => (
+  const MetricCard = ({ title, value, change, icon: Icon, suffix = '' }: { title: string; value: string; change: string | number; icon: React.ElementType; suffix?: string }) => (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">

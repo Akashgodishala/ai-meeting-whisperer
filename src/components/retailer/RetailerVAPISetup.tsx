@@ -18,10 +18,19 @@ import {
   ExternalLink
 } from "lucide-react";
 
+interface SetupResult {
+  data?: {
+    webhook_configured?: boolean;
+    call_initiated?: boolean;
+    sms_sent?: boolean;
+  };
+  error?: { message: string };
+}
+
 export const RetailerVAPISetup = () => {
   const [testPhone, setTestPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [setupResult, setSetupResult] = useState<any>(null);
+  const [setupResult, setSetupResult] = useState<SetupResult | null>(null);
 
   const handleTestRetailerCall = async () => {
     if (!testPhone) {
@@ -79,7 +88,7 @@ export const RetailerVAPISetup = () => {
           <h1 className="text-3xl font-bold">VAPI Configuration</h1>
         </div>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Enterprise voice AI setup for Ford Liquor Company - dedicated configuration management
+          Connect your VAPI phone number so customers can call and place orders through your AI voice agent
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Phone, PhoneOff, Loader2 } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { Link } from 'react-router-dom';
 
 type CallState = 'idle' | 'connecting' | 'active' | 'speaking' | 'ended' | 'error';
 
@@ -14,7 +15,7 @@ export function VapiLiveDemo() {
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [duration, setDuration] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
-  const vapiRef = useRef<any>(null);
+  const vapiRef = useRef<unknown>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const { ref, isVisible } = useScrollReveal();
@@ -76,9 +77,9 @@ export function VapiLiveDemo() {
         setCallState('active');
       });
 
-      vapi.on('message', (msg: any) => {
+      vapi.on('message', (msg: { type?: string; transcriptType?: string; role?: 'user' | 'assistant'; transcript?: string }) => {
         if (msg.type === 'transcript' && msg.transcriptType === 'final') {
-          setTranscript(prev => [...prev, { role: msg.role, text: msg.transcript }]);
+          setTranscript(prev => [...prev, { role: msg.role as 'user' | 'assistant', text: msg.transcript as string }]);
         }
       });
 
@@ -87,7 +88,7 @@ export function VapiLiveDemo() {
         stopTimer();
       });
 
-      vapi.on('error', (err: any) => {
+      vapi.on('error', (err: unknown) => {
         console.error('Vapi error:', err);
         setErrorMsg('Connection issue. Please try again.');
         setCallState('error');
@@ -244,9 +245,9 @@ export function VapiLiveDemo() {
                     <Phone className="w-4 h-4" />
                     Try Again
                   </button>
-                  <a href="#pricing" className="btn-accent-glow flex items-center gap-2 px-6 py-3">
+                  <Link to="/dashboard" className="btn-accent-glow flex items-center gap-2 px-6 py-3">
                     Start Free Trial
-                  </a>
+                  </Link>
                 </div>
               )}
               {callState === 'error' && (

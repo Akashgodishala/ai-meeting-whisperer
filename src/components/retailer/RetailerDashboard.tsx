@@ -21,8 +21,8 @@ interface RetailerProfile {
   business_type: string;
   phone: string;
   address: string;
-  payment_methods: any;
-  operating_hours: any;
+  payment_methods: Record<string, unknown>;
+  operating_hours: Record<string, unknown>;
 }
 
 interface VoiceTransaction {
@@ -57,6 +57,22 @@ interface VoiceLink {
   sent_at: string;
 }
 
+interface RetailerOrder {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  total_amount: number;
+  items: Array<{ name: string; quantity?: number }>;
+  order_type: string;
+  status: string;
+  call_session_id?: string;
+  estimated_time?: string;
+  notes?: string;
+  payment_link_url?: string;
+  payment_status?: string;
+  created_at: string;
+}
+
 interface RetailerCustomer {
   id: string;
   name: string;
@@ -84,7 +100,7 @@ export function RetailerDashboard() {
   const [links, setLinks] = useState<VoiceLink[]>([]);
   const [customers, setCustomers] = useState<RetailerCustomer[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<RetailerOrder[]>([]);
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState("");
@@ -331,7 +347,7 @@ export function RetailerDashboard() {
     }
   };
 
-  const sendManualPaymentLink = async (order: any) => {
+  const sendManualPaymentLink = async (order: RetailerOrder) => {
     try {
       toast.success('🚀 Creating payment link...');
       
@@ -1196,6 +1212,37 @@ export function RetailerDashboard() {
                   <p>Monday - Thursday: 9:00 AM - 9:00 PM</p>
                   <p>Friday - Saturday: 9:00 AM - 10:00 PM</p>
                   <p>Sunday: 10:00 AM - 8:00 PM</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <label className="text-sm font-semibold">Payment Link</label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  When a customer places an order, this link is sent to their phone via SMS. Use your Stripe, PayPal, Square, or any payment URL.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://buy.stripe.com/your-payment-link"
+                    defaultValue={(profile.payment_methods as Record<string, unknown>)?.payment_link as string || ''}
+                    id="payment-link-input"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const input = document.getElementById('payment-link-input') as HTMLInputElement;
+                      const link = input?.value?.trim();
+                      if (!link) { toast.error('Please enter a payment link'); return; }
+                      const currentMethods = (profile.payment_methods as Record<string, string>) || {};
+                      const { error } = await supabase
+                        .from('retailer_profiles')
+                        .update({ payment_methods: { ...currentMethods, payment_link: link } })
+                        .eq('id', profile.id);
+                      if (error) { toast.error('Failed to save payment link'); }
+                      else { toast.success('Payment link saved! Customers will receive this when they order.'); }
+                    }}
+                  >
+                    Save
+                  </Button>
                 </div>
               </div>
             </CardContent>

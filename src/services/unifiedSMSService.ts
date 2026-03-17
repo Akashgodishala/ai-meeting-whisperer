@@ -84,7 +84,7 @@ export class UnifiedSMSService {
     }
   }
 
-  async sendOrderConfirmationSMS(customerPhone: string, customerName: string, orderDetails: any): Promise<boolean> {
+  async sendOrderConfirmationSMS(customerPhone: string, customerName: string, orderDetails: Record<string, unknown>): Promise<boolean> {
     const message = `Hi ${customerName}! Your order has been confirmed. Order details: ${JSON.stringify(orderDetails)}. Thank you for your business!`;
     
     return this.sendSMS({
@@ -182,7 +182,7 @@ export class UnifiedSMSService {
     }
   }
 
-  async getSMSHistory(limit: number = 50): Promise<any[]> {
+  async getSMSHistory(limit: number = 50): Promise<Record<string, unknown>[]> {
     if (!this.retailerId) {
       console.warn('No retailer ID provided for SMS history');
       return [];

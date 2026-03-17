@@ -19,7 +19,7 @@ import {
   Edit,
   ArrowRight
 } from 'lucide-react';
-import { ConversationFlow, FlowNode, FlowConnection, FlowNodeData } from '@/types/agent';
+import { ConversationFlow, FlowNode, FlowConnection, FlowNodeData, ActionConfig } from '@/types/agent';
 
 interface FlowDesignerProps {
   flow?: ConversationFlow;
@@ -159,7 +159,7 @@ export const FlowDesigner: React.FC<FlowDesignerProps> = ({ flow, onChange }) =>
                 <Label>Input Type</Label>
                 <Select
                   value={selectedNode.data.inputType || 'speech'}
-                  onValueChange={(value: any) => updateNodeData(selectedNode.id, { inputType: value })}
+                  onValueChange={(value: string) => updateNodeData(selectedNode.id, { inputType: value as FlowNodeData['inputType'] })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -206,8 +206,8 @@ export const FlowDesigner: React.FC<FlowDesignerProps> = ({ flow, onChange }) =>
                 <Label>Action Type</Label>
               <Select
                   value={selectedNode.data.action?.type}
-                  onValueChange={(value: any) => updateNodeData(selectedNode.id, { 
-                    action: { type: value, config: {} }
+                  onValueChange={(value: string) => updateNodeData(selectedNode.id, {
+                    action: { type: value as ActionConfig['type'], config: {} }
                   })}
                 >
                   <SelectTrigger>
@@ -231,8 +231,8 @@ export const FlowDesigner: React.FC<FlowDesignerProps> = ({ flow, onChange }) =>
                 <Label>Transfer Type</Label>
                 <Select
                   value={selectedNode.data.transferTo?.type}
-                  onValueChange={(value: any) => updateNodeData(selectedNode.id, { 
-                    transferTo: { type: value, destination: '' }
+                  onValueChange={(value: string) => updateNodeData(selectedNode.id, {
+                    transferTo: { type: value as 'human' | 'agent' | 'external', destination: '' }
                   })}
                 >
                   <SelectTrigger>
@@ -288,7 +288,7 @@ export const FlowDesigner: React.FC<FlowDesignerProps> = ({ flow, onChange }) =>
                     key={nodeType.type}
                     variant="outline"
                     className="h-20 flex flex-col items-center gap-2"
-                    onClick={() => addNode(nodeType.type as any)}
+                    onClick={() => addNode(nodeType.type as FlowNode['type'])}
                   >
                     <div className={`p-2 rounded-full text-white ${nodeType.color}`}>
                       <nodeType.icon className="w-4 h-4" />

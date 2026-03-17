@@ -184,7 +184,7 @@ export const AgentBuilder: React.FC<AgentBuilderProps> = ({
                       <Label htmlFor="status">Status</Label>
                       <Select 
                         value={currentAgent.status} 
-                        onValueChange={(value: any) => updateAgent({ status: value })}
+                        onValueChange={(value: string) => updateAgent({ status: value as VoiceAgent['status'] })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -222,7 +222,7 @@ export const AgentBuilder: React.FC<AgentBuilderProps> = ({
                       <Label>Voice Provider</Label>
                       <Select 
                         value={currentAgent.voice?.provider} 
-                        onValueChange={(value: any) => updateVoiceConfig({ provider: value })}
+                        onValueChange={(value: string) => updateVoiceConfig({ provider: value as VoiceAgent['voice']['provider'] })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -315,7 +315,7 @@ export const AgentBuilder: React.FC<AgentBuilderProps> = ({
                       <Label>Tone</Label>
                       <Select 
                         value={currentAgent.ai?.personality?.tone} 
-                        onValueChange={(value: any) => updatePersonality({ tone: value })}
+                        onValueChange={(value: string) => updatePersonality({ tone: value as AgentPersonality['tone'] })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -334,7 +334,7 @@ export const AgentBuilder: React.FC<AgentBuilderProps> = ({
                       <Label>Style</Label>
                       <Select 
                         value={currentAgent.ai?.personality?.style} 
-                        onValueChange={(value: any) => updatePersonality({ style: value })}
+                        onValueChange={(value: string) => updatePersonality({ style: value as AgentPersonality['style'] })}
                       >
                         <SelectTrigger>
                           <SelectValue />

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[VAPI-LIQUOR-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -59,27 +59,27 @@ serve(async (req) => {
     switch (type) {
       case 'function-call':
       case 'transcript':
-      case 'call-update':
+      case 'call-update': {
         logStep("Processing function call/transcript", { message, type });
-        
+
         // Extract call information
         const messageText = message || '';
-        
+
         // Check for order triggers in message and call transcript
         const orderTriggers = [
-          'PAYMENT_READY', 'ORDER_CONFIRMED', 'order', 'payment', 'total', 
-          'confirm', 'checkout', 'ready to pay', 'complete my order', 
+          'PAYMENT_READY', 'ORDER_CONFIRMED', 'order', 'payment', 'total',
+          'confirm', 'checkout', 'ready to pay', 'complete my order',
           'finish my order', 'place order', 'process payment'
         ];
-        
-        const shouldProcessOrder = orderTriggers.some(trigger => 
+
+        const shouldProcessOrder = orderTriggers.some(trigger =>
           messageText.toLowerCase().includes(trigger.toLowerCase())
-        ) || call?.transcript?.some((t: any) => 
-          orderTriggers.some(trigger => 
-            t.text?.toLowerCase().includes(trigger.toLowerCase())
+        ) || call?.transcript?.some((t: Record<string, unknown>) =>
+          orderTriggers.some(trigger =>
+            (t.text as string)?.toLowerCase().includes(trigger.toLowerCase())
           )
         );
-        
+
         // For liquor store orders, we need to process through retailer-order-agent
         if (shouldProcessOrder) {
           logStep("Processing liquor order");
@@ -142,6 +142,7 @@ serve(async (req) => {
           }
         }
         break;
+      }
 
       case 'call-ended':
         logStep("Call ended", { callId: call?.id });

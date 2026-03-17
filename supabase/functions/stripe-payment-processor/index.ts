@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-PAYMENT-PROCESSOR] ${step}${detailsStr}`);
 };
@@ -39,13 +39,14 @@ serve(async (req) => {
     }
 
     // Get order details
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseClient
       .from("retailer_orders")
       .select(`
         *,
         retailer_profiles (
           business_name,
-          business_type
+          business_type,
+          phone
         )
       `)
       .eq("id", order_id)
@@ -147,7 +148,7 @@ serve(async (req) => {
     });
 
     // Update order with payment link
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseClient
       .from("retailer_orders")
       .update({
         payment_link_url: session.url,
@@ -160,26 +161,48 @@ serve(async (req) => {
       logStep("Failed to update order", { error: updateError });
     }
 
-    // Send SMS with payment link
+    const businessName = order.retailer_profiles?.business_name || 'your business';
+
+    // Send SMS to customer with payment link
     try {
-      const { error: smsError } = await supabase.functions.invoke('send-sms', {
+      const { error: smsError } = await supabaseClient.functions.invoke('send-sms', {
         body: {
           to: order.customer_phone,
-          message: `Your order is ready for payment! Total: $${order.total_amount}. Pay here: ${session.url}`
+          message: `Hi ${order.customer_name || 'there'}! Your order from ${businessName} is confirmed. Total: $${order.total_amount}. Pay here: ${session.url}. Ready in ~15-20 mins. Thank you!`
         }
       });
 
       if (smsError) {
-        logStep("SMS sending failed", { error: smsError });
+        logStep("Customer SMS sending failed", { error: smsError });
       } else {
-        logStep("Payment link sent via SMS");
+        logStep("Payment link sent via SMS to customer");
       }
     } catch (smsError) {
-      logStep("SMS service error", { error: smsError });
+      logStep("Customer SMS service error", { error: smsError });
+    }
+
+    // Send SMS notification to retailer
+    const retailerPhone = order.retailer_profiles?.phone;
+    if (retailerPhone) {
+      try {
+        const { error: retailerSmsError } = await supabaseClient.functions.invoke('send-sms', {
+          body: {
+            to: retailerPhone,
+            message: `NEW ORDER ALERT - ${businessName}\nCustomer: ${order.customer_name || 'Unknown'} (${order.customer_phone})\nTotal: $${order.total_amount}\nType: ${order.order_type || 'pickup'}\nStatus: Payment link sent. Please prepare order.`
+          }
+        });
+        if (retailerSmsError) {
+          logStep("Retailer SMS failed", { error: retailerSmsError });
+        } else {
+          logStep("Retailer notified via SMS");
+        }
+      } catch (retailerSmsError) {
+        logStep("Retailer SMS error", { error: retailerSmsError });
+      }
     }
 
     // Log analytics
-    await supabase
+    await supabaseClient
       .from("service_analytics")
       .insert({
         store_id: order.retailer_id,

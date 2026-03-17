@@ -14,10 +14,10 @@ interface AgentSession {
   agentId: string;
   sessionId: string;
   currentNodeId: string;
-  sessionVariables: Record<string, any>;
-  conversationHistory: any[];
-  agent: any;
-  flow: any;
+  sessionVariables: Record<string, unknown>;
+  conversationHistory: Record<string, unknown>[];
+  agent: Record<string, unknown>;
+  flow: Record<string, unknown>;
 }
 
 // In-memory session storage (in production, use Redis or similar)
@@ -79,7 +79,7 @@ serve(async (req) => {
   return response;
 });
 
-async function handleStartSession(socket: WebSocket, message: any) {
+async function handleStartSession(socket: WebSocket, message: Record<string, unknown>) {
   const { agentId, sessionId, customerData } = message;
   
   logStep("Starting session", { agentId, sessionId });
@@ -158,7 +158,7 @@ async function handleStartSession(socket: WebSocket, message: any) {
   }
 }
 
-async function handleUserInput(socket: WebSocket, message: any) {
+async function handleUserInput(socket: WebSocket, message: Record<string, unknown>) {
   const { sessionId, input, inputType } = message;
   
   logStep("Processing user input", { sessionId, input, inputType });
@@ -207,7 +207,7 @@ async function handleUserInput(socket: WebSocket, message: any) {
   }
 }
 
-async function handleEndSession(socket: WebSocket, message: any) {
+async function handleEndSession(socket: WebSocket, message: Record<string, unknown>) {
   const { sessionId } = message;
   
   logStep("Ending session", { sessionId });
@@ -237,7 +237,7 @@ async function handleEndSession(socket: WebSocket, message: any) {
 async function executeNode(socket: WebSocket, session: AgentSession, nodeId: string) {
   logStep("Executing node", { nodeId, sessionId: session.sessionId });
 
-  const node = session.flow.flow_nodes.find((n: any) => n.node_id === nodeId);
+  const node = session.flow.flow_nodes.find((n: Record<string, unknown>) => n.node_id === nodeId);
   if (!node) {
     throw new Error(`Node ${nodeId} not found`);
   }
@@ -268,7 +268,7 @@ async function executeNode(socket: WebSocket, session: AgentSession, nodeId: str
   }
 }
 
-async function executeMessageNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeMessageNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   const message = interpolateMessage(nodeData.message, session.sessionVariables);
   
   // Add to conversation history
@@ -294,7 +294,7 @@ async function executeMessageNode(socket: WebSocket, session: AgentSession, node
   }
 }
 
-async function executeInputNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeInputNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   // Send input request to client
   socket.send(JSON.stringify({
     type: 'input_required',
@@ -307,7 +307,7 @@ async function executeInputNode(socket: WebSocket, session: AgentSession, nodeDa
   // The response will be handled in handleUserInput
 }
 
-async function executeConditionNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeConditionNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   const conditions = nodeData.conditions || [];
   
   for (const condition of conditions) {
@@ -326,7 +326,7 @@ async function executeConditionNode(socket: WebSocket, session: AgentSession, no
   }
 }
 
-async function executeActionNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeActionNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   const action = nodeData.action;
   
   switch (action?.type) {
@@ -355,7 +355,7 @@ async function executeActionNode(socket: WebSocket, session: AgentSession, nodeD
   }
 }
 
-async function executeIntegrationNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeIntegrationNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   const integration = nodeData.integration;
   
   // Execute integration based on type
@@ -370,7 +370,7 @@ async function executeIntegrationNode(socket: WebSocket, session: AgentSession, 
   }
 }
 
-async function executeTransferNode(socket: WebSocket, session: AgentSession, nodeData: any) {
+async function executeTransferNode(socket: WebSocket, session: AgentSession, nodeData: Record<string, unknown>) {
   const transferTo = nodeData.transferTo;
   
   // Send transfer request
@@ -386,7 +386,7 @@ async function executeTransferNode(socket: WebSocket, session: AgentSession, nod
 
 async function processUserInput(session: AgentSession, input: string, inputType: string): Promise<string | null> {
   // Find the current node
-  const currentNode = session.flow.flow_nodes.find((n: any) => n.node_id === session.currentNodeId);
+  const currentNode = session.flow.flow_nodes.find((n: Record<string, unknown>) => n.node_id === session.currentNodeId);
   
   if (!currentNode || currentNode.node_type !== 'input') {
     return null;
@@ -411,7 +411,7 @@ async function processUserInput(session: AgentSession, input: string, inputType:
 }
 
 function getNextNode(session: AgentSession, currentNodeId: string): string | null {
-  const connections = session.flow.flow_connections.filter((c: any) => c.source_node_id === currentNodeId);
+  const connections = session.flow.flow_connections.filter((c: Record<string, unknown>) => c.source_node_id === currentNodeId);
   
   if (connections.length === 0) {
     return null;
@@ -436,7 +436,7 @@ function getNextNode(session: AgentSession, currentNodeId: string): string | nul
   return null;
 }
 
-function evaluateCondition(condition: any, variables: Record<string, any>): boolean {
+function evaluateCondition(condition: Record<string, unknown>, variables: Record<string, unknown>): boolean {
   // Simple condition evaluation - can be expanded
   const { variable, operator, value } = condition;
   const varValue = variables[variable];
@@ -457,7 +457,7 @@ function evaluateCondition(condition: any, variables: Record<string, any>): bool
   }
 }
 
-function validateInput(input: string, validationRules: any[]): boolean {
+function validateInput(input: string, validationRules: Record<string, unknown>[]): boolean {
   for (const rule of validationRules) {
     switch (rule.type) {
       case 'regex':
@@ -470,23 +470,24 @@ function validateInput(input: string, validationRules: any[]): boolean {
           return false;
         }
         break;
-      case 'range':
+      case 'range': {
         const num = Number(input);
         if (isNaN(num) || num < rule.min || num > rule.max) {
           return false;
         }
         break;
+      }
     }
   }
   return true;
 }
 
-function interpolateMessage(message: string, variables: Record<string, any>): string {
+function interpolateMessage(message: string, variables: Record<string, unknown>): string {
   return message.replace(/\{(\w+)\}/g, (match, key) => {
     return variables[key] || match;
   });
 }
 
-function logStep(step: string, details?: any) {
+function logStep(step: string, details?: unknown) {
   console.log(`[FlexibleAgent] ${step}`, details || '');
 }

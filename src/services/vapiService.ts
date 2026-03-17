@@ -72,13 +72,14 @@ export class VAPIService {
     console.log(`Call ${callId} initiated for ${customer.name} - webhook will capture results`);
   }
 
-  private extractCustomerResponse(callData: any): CustomerResponse['response'] {
-    const messages = callData.messages || (callData.artifact && callData.artifact.messages) || [];
+  private extractCustomerResponse(callData: Record<string, unknown>): CustomerResponse['response'] {
+    const artifact = callData.artifact as Record<string, unknown> | undefined;
+    const messages = (callData.messages || (artifact && artifact.messages) || []) as Record<string, unknown>[];
     let customerResponse: CustomerResponse['response'] = 'no_response';
-    
-    messages.forEach((message: any) => {
+
+    messages.forEach((message: Record<string, unknown>) => {
       if (message.role === 'user') {
-        const content = message.message?.toLowerCase() || message.content?.toLowerCase() || '';
+        const content = (message.message as string)?.toLowerCase() || (message.content as string)?.toLowerCase() || '';
         if (content.includes('1') || content.includes('yes') || content.includes('attend')) {
           customerResponse = 'attending';
         } else if (content.includes('2') || content.includes('no') || content.includes('cannot')) {
@@ -90,7 +91,7 @@ export class VAPIService {
     return customerResponse;
   }
 
-  private handleCallCompletion(customer: Customer, customerResponse: CustomerResponse['response'], callData?: any): void {
+  private handleCallCompletion(customer: Customer, customerResponse: CustomerResponse['response'], callData?: Record<string, unknown>): void {
     const responseText = customerResponse === 'attending' ? 'Will Attend ✅' : 
                          customerResponse === 'not_attending' ? 'Cannot Attend ❌' : 
                          'No Response ⏳';

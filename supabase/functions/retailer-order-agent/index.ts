@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[RETAILER-ORDER-AGENT] ${step}${detailsStr}`);
 };
@@ -144,45 +144,45 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
         // Parse the order details from the AI response or message
         let orderType = 'pickup'; // default
         let deliveryAddress = null;
-        let estimatedTime = null;
-        
+        const estimatedTime = '15-20 minutes';
+
         // Determine order type from message content
-        if (message.toLowerCase().includes('delivery') || 
+        if (message.toLowerCase().includes('delivery') ||
             message.toLowerCase().includes('deliver') ||
             orderDetails.toLowerCase().includes('delivery') ||
             orderDetails.toLowerCase().includes('deliver')) {
           orderType = 'delivery';
-          estimatedTime = '10-30 minutes';
-          
+
           // Try to extract address from message
-          const addressMatch = message.match(/(?:address|to|deliver to)\s*[:\-]?\s*([^,.]+(?:,[^,.]+)*)/i);
+          const addressMatch = message.match(/(?:address|to|deliver to)\s*[:-]?\s*([^,.]+(?:,[^,.]+)*)/i);
           if (addressMatch) {
             deliveryAddress = addressMatch[1].trim();
           }
-        } else {
-          estimatedTime = '10-30 minutes';
         }
-        
-        // Parse items from the order details (basic implementation)
-        let itemsTotal = 50.00; // Default fallback
-        let itemsList = [{ name: "Order from call", details: orderDetails, price: 50.00, quantity: 1 }];
-        
-        // Try to extract Corona order specifically
-        if (orderDetails.toLowerCase().includes('corona') || message.toLowerCase().includes('corona')) {
-          const coronaPrice = orderType === 'delivery' ? 32.99 : 32.99; // Same price for pickup/delivery
-          itemsList = [{ 
-            name: "Corona 24 Pack", 
-            details: "24-pack Corona beer",
-            price: coronaPrice,
-            quantity: 1 
-          }];
-          itemsTotal = coronaPrice;
+
+        // Match mentioned items against inventory; fall back to generic order item
+        let itemsTotal = 0;
+        const itemsList: { name: string; details: string; price: number; quantity: number }[] = [];
+
+        if (inventory && inventory.length > 0) {
+          for (const item of inventory) {
+            const itemName = (item.name as string).toLowerCase();
+            if (orderDetails.toLowerCase().includes(itemName) || message.toLowerCase().includes(itemName)) {
+              itemsList.push({ name: item.name as string, details: (item.size as string) || '', price: item.price as number, quantity: 1 });
+              itemsTotal += (item.price as number);
+            }
+          }
         }
-        
+
+        if (itemsList.length === 0) {
+          itemsTotal = 25.00;
+          itemsList.push({ name: "Customer order (via call)", details: orderDetails.substring(0, 200), price: 25.00, quantity: 1 });
+        }
+
         const serviceFee = orderType === 'delivery' ? 3.00 : 0;
-        const driverTip = orderType === 'delivery' ? 8.00 : 0;
+        const driverTip = orderType === 'delivery' ? 5.00 : 0;
         const totalAmount = itemsTotal + serviceFee + driverTip;
-        
+
         const orderData = {
           retailer_id,
           customer_name,
@@ -193,11 +193,10 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
           service_fee: serviceFee,
           driver_tip: driverTip,
           total_amount: totalAmount,
-          status: 'pending',
+          status: 'confirmed',
           call_session_id,
           delivery_address: deliveryAddress,
-          estimated_time: estimatedTime,
-          notes: `Order placed via VAPI call. Original message: ${message.substring(0, 200)}`,
+          notes: `Order placed via AI voice call. Details: ${orderDetails.substring(0, 300)}`,
           payment_status: 'pending'
         };
 
@@ -208,92 +207,120 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
           .single();
 
         if (!orderError && order) {
-          // Use the provided test Stripe payment link
-          const paymentLink = "https://buy.stripe.com/test_4gM5kFaUkgpG05Q9AO9R600";
-          
+          // Use retailer's configured payment link from their profile (stored in payment_methods JSON)
+          // Retailers set this in their dashboard under Settings > Payment Link
+          const rawPaymentMethods = retailer.payment_methods as unknown;
+          let configuredPaymentLink: string | null = null;
+
+          // Handle both object-shaped JSON (future/alternate schema) and the current array schema safely
+          if (
+            rawPaymentMethods &&
+            typeof rawPaymentMethods === "object" &&
+            !Array.isArray(rawPaymentMethods)
+          ) {
+            const methodsObj = rawPaymentMethods as { [key: string]: unknown };
+            const paymentLinkValue =
+              methodsObj["payment_link"] ?? methodsObj["stripe_link"];
+            if (typeof paymentLinkValue === "string" && paymentLinkValue.trim() !== "") {
+              configuredPaymentLink = paymentLinkValue;
+            }
+          }
+
+          // Use retailer's configured link (if any) or a generic order confirmation URL as fallback
+          const paymentLink = configuredPaymentLink
+            || `https://voxorbit.app/pay?order=${order.id}&amount=${totalAmount.toFixed(2)}`;
+
           await supabaseClient
             .from("retailer_orders")
             .update({ payment_link_url: paymentLink })
             .eq("id", order.id);
 
-          // Send SMS with payment link - try multiple credential sources
-          const smsMessage = orderType === 'delivery' 
-            ? `🍺 Thanks for your ${retailer.business_name} delivery order! Items: ${itemsList.map(i => i.name).join(', ')}. Total: $${order.total_amount} (includes $3 delivery fee + $8 tip). Estimated delivery: ${estimatedTime}. Pay here: ${paymentLink}`
-            : `🍺 Thanks for your ${retailer.business_name} pickup order! Items: ${itemsList.map(i => i.name).join(', ')}. Total: $${order.total_amount}. Ready for pickup in ${estimatedTime}. Pay here: ${paymentLink}`;
-          
-          logStep("=== SMS SENDING DEBUG ===", {
-            sending_to_phone: customer_phone,
-            customer_name: customer_name,
-            payment_link: paymentLink,
-            retailer_name: retailer.business_name,
-            order_type: orderType,
-            sms_message: smsMessage
-          });
-          
-          // First try: Use environment secrets (Supabase secrets)
-          let smsResponse = await supabaseClient.functions.invoke('send-sms', {
-            body: {
-              to: customer_phone,
-              message: smsMessage,
-              customerName: customer_name,
-              accountSid: Deno.env.get("TWILIO_ACCOUNT_SID"),
-              authToken: Deno.env.get("TWILIO_AUTH_TOKEN"),
-              fromNumber: Deno.env.get("TWILIO_FROM_NUMBER")
-            }
-          });
-          
-          logStep("SMS Response (Environment secrets)", { smsResponse, error: smsResponse.error });
+          // ── SMS to CUSTOMER with payment link ──────────────────────────
+          const itemNames = itemsList.map(i => i.name).join(', ');
+          const customerSms = orderType === 'delivery'
+            ? `Hi ${customer_name || 'there'}! Your order from ${retailer.business_name} is confirmed. Items: ${itemNames}. Total: $${totalAmount.toFixed(2)} (incl. $${serviceFee.toFixed(2)} delivery fee). Estimated delivery: ${estimatedTime}. Pay here: ${paymentLink}`
+            : `Hi ${customer_name || 'there'}! Your order from ${retailer.business_name} is confirmed. Items: ${itemNames}. Total: $${totalAmount.toFixed(2)}. Ready for pickup in ${estimatedTime}. Pay here: ${paymentLink}`;
 
-          // If environment secrets failed, try direct Twilio call as fallback
-          if (smsResponse.error) {
-            logStep("Environment secrets failed, trying direct Twilio API call");
-            
-            try {
-              const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${Deno.env.get("TWILIO_ACCOUNT_SID")}/Messages.json`;
-              
-              const formData = new URLSearchParams();
-              formData.append('To', customer_phone);
-              formData.append('From', Deno.env.get("TWILIO_FROM_NUMBER") || '+12345678901');
-              formData.append('Body', smsMessage);
+          logStep("Sending customer SMS", { to: customer_phone });
 
-              const directTwilioResponse = await fetch(twilioUrl, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Basic ${btoa(`${Deno.env.get("TWILIO_ACCOUNT_SID")}:${Deno.env.get("TWILIO_AUTH_TOKEN")}`)}`,
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData,
-              });
+          let customerSmsSent = false;
+          try {
+            const smsResp = await supabaseClient.functions.invoke('send-sms', {
+              body: { to: customer_phone, message: customerSms, customerName: customer_name }
+            });
+            if (!smsResp.error) {
+              customerSmsSent = true;
+              logStep("Customer SMS sent successfully");
+            } else {
+              // Fallback: direct Twilio API
+              const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+              const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+              const fromNumber = Deno.env.get("TWILIO_FROM_NUMBER");
 
-              if (directTwilioResponse.ok) {
-                const result = await directTwilioResponse.json();
-                logStep("Direct Twilio API SUCCESS", { messageSid: result.sid });
-                smsResponse = { data: { success: true, messageSid: result.sid }, error: null };
+              if (!accountSid || !authToken || !fromNumber) {
+                // Avoid making malformed Twilio requests when credentials are missing
+                logStep("Customer SMS Twilio fallback not configured", {
+                  hasAccountSid: !!accountSid,
+                  hasAuthToken: !!authToken,
+                  hasFromNumber: !!fromNumber,
+                });
               } else {
-                const error = await directTwilioResponse.json();
-                logStep("Direct Twilio API FAILED", { error });
-                throw new Error(`Direct Twilio failed: ${error.message}`);
+                const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+                const formData = new URLSearchParams();
+                formData.append('To', customer_phone);
+                formData.append('From', fromNumber);
+                formData.append('Body', customerSms);
+
+                const twilioResp = await fetch(twilioUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                  },
+                  body: formData,
+                });
+
+                if (twilioResp.ok) {
+                  customerSmsSent = true;
+                  logStep("Customer SMS sent via direct Twilio");
+                } else {
+                  logStep("Customer SMS Twilio fallback failed", {
+                    status: twilioResp.status,
+                    statusText: twilioResp.statusText,
+                  });
+                }
               }
-            } catch (directError) {
-              logStep("Both SMS methods failed", { directError });
-              // Don't throw error - let order creation succeed even if SMS fails
-              smsResponse = { error: { message: "SMS failed but order created successfully" }, data: null };
             }
-          } else {
-            logStep("SMS sent successfully via environment secrets", { response: smsResponse.data });
+          } catch (smsErr) {
+            logStep("Customer SMS failed", { error: smsErr });
+          }
+
+          // ── SMS NOTIFICATION to RETAILER ──────────────────────────────
+          const retailerPhone = retailer.phone;
+          if (retailerPhone) {
+            const retailerSms = `NEW ORDER from ${retailer.business_name}!\nCustomer: ${customer_name || 'Unknown'} (${customer_phone})\nItems: ${itemNames}\nTotal: $${totalAmount.toFixed(2)}\nType: ${orderType.toUpperCase()}${deliveryAddress ? `\nDeliver to: ${deliveryAddress}` : ''}\nReady in: ${estimatedTime}`;
+            try {
+              await supabaseClient.functions.invoke('send-sms', {
+                body: { to: retailerPhone, message: retailerSms, customerName: 'VoxOrbit Alert' }
+              });
+              logStep("Retailer notified via SMS", { retailerPhone });
+            } catch (e) {
+              logStep("Retailer SMS failed", { error: e });
+            }
           }
 
           actionResult = {
             action: "order_created",
             order_id: order.id,
             payment_link: paymentLink,
-            total: order.total_amount,
+            total: totalAmount,
             order_type: orderType,
             estimated_time: estimatedTime,
-            items: itemsList
+            items: itemsList,
+            customer_sms_sent: customerSmsSent
           };
 
-          logStep("Order created with real payment link", { orderId: order.id, paymentLink });
+          logStep("Order created successfully", { orderId: order.id, paymentLink, total: totalAmount });
         }
       }
     }

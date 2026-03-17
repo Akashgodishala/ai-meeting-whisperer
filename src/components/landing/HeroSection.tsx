@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Phone, Calendar, CreditCard, ArrowRight, Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const chatMessages = [
   { role: 'customer' as const, text: "Hi, I'd like to book a haircut for tomorrow 3pm" },
@@ -77,10 +78,10 @@ export function HeroSection() {
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-4">
-              <a href="#pricing" className="btn-accent-glow flex items-center gap-2 text-base">
+              <Link to="/dashboard" className="btn-accent-glow flex items-center gap-2 text-base">
                 Try It Free — No Credit Card
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </Link>
               <a
                 href="#demo"
                 className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors"

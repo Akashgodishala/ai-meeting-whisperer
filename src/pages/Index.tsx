@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { VoiceAgentDashboard } from "@/components/voice-agent/VoiceAgentDashboard";
 import { CustomerDatabase } from "@/components/customer/CustomerDatabase";
 import { AutomatedMeetingScheduler } from "@/components/meetings/AutomatedMeetingScheduler";
@@ -12,6 +13,8 @@ import { RetailerDashboard } from "@/components/retailer/RetailerDashboard";
 import { AutomationMonitor } from "@/components/analytics/AutomationMonitor";
 import { OrderManagement } from "@/components/orders/OrderManagement";
 import { BusinessSetup, isSetupComplete } from "@/components/setup/BusinessSetup";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   Bot,
   Users,
@@ -24,11 +27,23 @@ import {
   Settings,
   Store,
   AlertTriangle,
+  LogIn,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [setupDone, setSetupDone] = useState<boolean>(() => isSetupComplete());
+  const [showLogin, setShowLogin] = useState(false);
+  const { user, signOut } = useAuth();
+
+  // Auto-close login dialog when user signs in
+  useEffect(() => {
+    if (user && showLogin) {
+      setShowLogin(false);
+    }
+  }, [user, showLogin]);
 
   const handleSetupComplete = () => {
     setSetupDone(true);
@@ -55,17 +70,47 @@ const Index = () => {
               </div>
             </div>
 
-            {!setupDone && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setActiveTab("setup")}
-                className="flex items-center gap-2 shrink-0"
-              >
-                <Settings className="h-4 w-4" />
-                Complete Setup
-              </Button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {!setupDone && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setActiveTab("setup")}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Complete Setup
+                </Button>
+              )}
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:flex items-center gap-1.5 text-primary-foreground/80 text-sm">
+                    <UserCircle className="h-4 w-4" />
+                    {user.email}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => signOut()}
+                    className="flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowLogin(true)}
+                  className="flex items-center gap-2"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In / Sign Up
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -173,7 +218,21 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="retailer">
-            <RetailerDashboard />
+            {user ? (
+              <RetailerDashboard />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+                <Store className="h-14 w-14 text-muted-foreground/40" />
+                <h3 className="text-xl font-semibold">Sign in to access your Retailer Dashboard</h3>
+                <p className="text-muted-foreground max-w-sm">
+                  Your retailer profile, orders, inventory, VAPI setup, and payment link settings are all here — once you're signed in.
+                </p>
+                <Button onClick={() => setShowLogin(true)} className="mt-2 gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Sign In / Sign Up
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="pdf">
@@ -189,6 +248,13 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Login / Sign Up dialog */}
+      <Dialog open={showLogin} onOpenChange={setShowLogin}>
+        <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-md">
+          <LoginForm />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -16,7 +16,7 @@ export function VoiceAgentTest({ retailerId }: VoiceAgentTestProps) {
   const [testMessage, setTestMessage] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<{ reply?: string; action?: string; action_result?: unknown } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testVoiceAgent = async () => {

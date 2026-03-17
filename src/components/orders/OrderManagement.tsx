@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,6 @@ import {
   Clock,
   Truck,
   Package,
-  TrendingUp,
   DollarSign,
   Phone,
   User,
@@ -41,6 +40,7 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
+  Timer,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -49,10 +49,10 @@ interface Order {
   id: string;
   customer_phone: string;
   customer_name?: string;
-  order_items?: any;
+  items?: Record<string, unknown>[] | string | Record<string, unknown>;
   total_amount?: number;
   payment_status?: string;
-  order_status?: string;
+  status?: string;
   payment_method?: string;
   notes?: string;
   created_at: string;
@@ -89,6 +89,58 @@ const statusIcons: Record<string, React.ReactNode> = {
   fulfilled: <Truck className="h-3.5 w-3.5" />,
   cancelled: <XCircle className="h-3.5 w-3.5" />,
 };
+
+// ─── Prep Timer ────────────────────────────────────────────────────────────────
+
+const PREP_MINUTES = 15;
+
+function PrepTimer({ createdAt, orderStatus }: { createdAt: string; orderStatus?: string }) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    // Only show timer for confirmed or processing orders
+    if (orderStatus !== "confirmed" && orderStatus !== "processing") {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const endTime = new Date(createdAt).getTime() + PREP_MINUTES * 60 * 1000;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    };
+
+    tick();
+    intervalRef.current = setInterval(tick, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [createdAt, orderStatus]);
+
+  if (secondsLeft === null) return null;
+
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+  const isUrgent = secondsLeft <= 120; // last 2 minutes
+  const isDone = secondsLeft === 0;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded ${
+        isDone
+          ? "bg-green-100 text-green-700"
+          : isUrgent
+          ? "bg-red-100 text-red-700 animate-pulse"
+          : "bg-orange-100 text-orange-700"
+      }`}
+    >
+      <Timer className="h-3 w-3" />
+      {isDone ? "Ready!" : `${mins}:${String(secs).padStart(2, "0")}`}
+    </span>
+  );
+}
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -136,10 +188,10 @@ function OrderDetailDialog({
 
   const items = (() => {
     try {
-      if (Array.isArray(order.order_items)) return order.order_items;
-      if (typeof order.order_items === "string") return JSON.parse(order.order_items);
-      if (order.order_items && typeof order.order_items === "object") return [order.order_items];
-    } catch {}
+      if (Array.isArray(order.items)) return order.items;
+      if (typeof order.items === "string") return JSON.parse(order.items);
+      if (order.items && typeof order.items === "object") return [order.items];
+    } catch { /* ignored */ }
     return [];
   })();
 
@@ -175,14 +227,14 @@ function OrderDetailDialog({
                 <Package className="h-4 w-4 text-primary" /> Items
               </h4>
               <div className="space-y-2">
-                {items.map((item: any, idx: number) => (
+                {items.map((item: Record<string, unknown>, idx: number) => (
                   <div
                     key={idx}
                     className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
                   >
                     <div>
-                      <p className="text-sm font-medium text-foreground">{item.name || item.product || `Item ${idx + 1}`}</p>
-                      {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
+                      <p className="text-sm font-medium text-foreground">{String(item.name || item.product || `Item ${idx + 1}`)}</p>
+                      {item.notes && <p className="text-xs text-muted-foreground">{String(item.notes)}</p>}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-foreground">
@@ -220,7 +272,7 @@ function OrderDetailDialog({
                 <Button
                   key={s}
                   size="sm"
-                  variant={order.order_status === s ? "default" : "outline"}
+                  variant={order.status === s ? "default" : "outline"}
                   className="capitalize text-xs"
                   onClick={() => {
                     onStatusChange(order.id, s);
@@ -277,10 +329,10 @@ export const OrderManagement = () => {
       // Compute stats
       const newStats: OrderStats = {
         total: rows.length,
-        pending: rows.filter((o) => o.order_status === "pending").length,
-        confirmed: rows.filter((o) => o.order_status === "confirmed").length,
-        fulfilled: rows.filter((o) => o.order_status === "fulfilled").length,
-        cancelled: rows.filter((o) => o.order_status === "cancelled").length,
+        pending: rows.filter((o) => o.status === "pending").length,
+        confirmed: rows.filter((o) => o.status === "confirmed").length,
+        fulfilled: rows.filter((o) => o.status === "fulfilled").length,
+        cancelled: rows.filter((o) => o.status === "cancelled").length,
         revenue: rows
           .filter((o) => o.payment_status === "paid" && o.total_amount)
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
@@ -302,7 +354,22 @@ export const OrderManagement = () => {
       .channel("retailer_orders_realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "retailer_orders" },
+        { event: "INSERT", schema: "public", table: "retailer_orders" },
+        (payload) => {
+          const newOrder = payload.new as Order;
+          toast.success(
+            `New order from ${newOrder.customer_name || newOrder.customer_phone}!`,
+            {
+              description: `Total: $${Number(newOrder.total_amount || 0).toFixed(2)} — Ready in ~15-20 min`,
+              duration: 8000,
+            }
+          );
+          loadOrders();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "retailer_orders" },
         () => loadOrders()
       )
       .subscribe();
@@ -317,7 +384,7 @@ export const OrderManagement = () => {
     let result = [...orders];
 
     if (statusFilter !== "all") {
-      result = result.filter((o) => o.order_status === statusFilter);
+      result = result.filter((o) => o.status === statusFilter);
     }
 
     if (searchQuery.trim()) {
@@ -347,13 +414,13 @@ export const OrderManagement = () => {
     try {
       const { error } = await supabase
         .from("retailer_orders")
-        .update({ order_status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", orderId);
 
       if (error) throw error;
 
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, order_status: newStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
       toast.success(`Order status updated to "${newStatus}"`);
     } catch (err) {
@@ -583,11 +650,11 @@ export const OrderManagement = () => {
                         <Badge
                           variant="outline"
                           className={`text-xs capitalize border flex items-center gap-1 w-fit ${
-                            statusColors[order.order_status || "pending"]
+                            statusColors[order.status || "pending"]
                           }`}
                         >
-                          {statusIcons[order.order_status || "pending"]}
-                          {order.order_status || "pending"}
+                          {statusIcons[order.status || "pending"]}
+                          {order.status || "pending"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -601,6 +668,7 @@ export const OrderManagement = () => {
                             minute: "2-digit",
                           })}
                         </p>
+                        <PrepTimer createdAt={order.created_at} orderStatus={order.status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

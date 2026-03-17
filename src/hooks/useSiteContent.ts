@@ -6,7 +6,7 @@ interface SiteContent {
   key: string;
   title: string | null;
   content: string | null;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 // Fallback content when database fails
@@ -114,7 +114,7 @@ export const useSiteContent = (keys: string[]) => {
     return content[key]?.title || FALLBACK_CONTENT[key]?.title || fallback;
   };
 
-  const getData = (key: string, field: string, fallback: any = null) => {
+  const getData = (key: string, field: string, fallback: unknown = null) => {
     return content[key]?.data?.[field] || FALLBACK_CONTENT[key]?.data?.[field] || fallback;
   };
 

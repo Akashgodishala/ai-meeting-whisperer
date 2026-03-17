@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // Helper logging function
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[RETAILER-VOICE-AGENT] ${step}${detailsStr}`);
 };
@@ -21,7 +21,7 @@ function isValidUUID(str: string): boolean {
 function validatePhoneNumber(phone: string): boolean {
   if (!phone) return false;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  return phoneRegex.test(phone.replace(/[\s()-]/g, ''));
 }
 
 function sanitizeString(str: string, maxLength: number): string {
@@ -273,11 +273,11 @@ Respond with a JSON object containing:
 });
 
 async function processPayment(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   retailer_id: string,
   customer_phone: string,
   customer_name: string,
-  paymentData: any,
+  paymentData: Record<string, unknown>,
   call_session_id: string
 ) {
   logStep("Processing payment", paymentData);
@@ -305,11 +305,11 @@ async function processPayment(
 }
 
 async function bookAppointment(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   retailer_id: string,
   customer_phone: string,
   customer_name: string,
-  appointmentData: any,
+  appointmentData: Record<string, unknown>,
   call_session_id: string
 ) {
   logStep("Booking appointment", appointmentData);
@@ -338,10 +338,10 @@ async function bookAppointment(
 }
 
 async function shareLink(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   retailer_id: string,
   customer_phone: string,
-  linkData: any,
+  linkData: Record<string, unknown>,
   call_session_id: string
 ) {
   logStep("Sharing link", linkData);

@@ -8,8 +8,8 @@ export interface VAPICredentials {
 export interface VAPICallData {
   id: string;
   status: string;
-  transcript?: any[];
-  messages?: any[];
+  transcript?: Record<string, unknown>[];
+  messages?: Record<string, unknown>[];
 }
 
 export interface CustomerResponse {

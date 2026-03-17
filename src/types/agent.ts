@@ -96,7 +96,7 @@ export interface FlowNodeData {
   // Integration Node
   integration?: {
     type: string;
-    config: Record<string, any>;
+    config: Record<string, unknown>;
   };
   
   // Transfer Node
@@ -117,7 +117,7 @@ export interface FlowConnection {
 export interface ChannelConfig {
   type: 'voice' | 'sms' | 'whatsapp' | 'webchat' | 'email';
   enabled: boolean;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   phoneNumbers?: string[];
   webhookUrl?: string;
 }
@@ -127,7 +127,7 @@ export interface IntegrationConfig {
   type: 'crm' | 'calendar' | 'payment' | 'database' | 'api' | 'webhook';
   name: string;
   enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   authType?: 'api_key' | 'oauth' | 'basic' | 'none';
   credentials?: Record<string, string>;
 }
@@ -150,11 +150,11 @@ export interface ValidationRule {
 export interface ConditionRule {
   variable: string;
   operator: 'equals' | 'contains' | 'greater' | 'less' | 'regex' | 'exists';
-  value: any;
+  value: string | number | boolean;
   nextNodeId: string;
 }
 
 export interface ActionConfig {
   type: 'set_variable' | 'api_call' | 'send_message' | 'schedule_callback' | 'create_record';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }

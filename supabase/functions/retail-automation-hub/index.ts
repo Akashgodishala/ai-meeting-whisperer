@@ -16,7 +16,7 @@ function isValidUUID(str: string): boolean {
 function validatePhoneNumber(phone: string): boolean {
   if (!phone) return false;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  return phoneRegex.test(phone.replace(/[\s()-]/g, ''));
 }
 
 function sanitizeString(str: string, maxLength: number): string {
@@ -32,9 +32,9 @@ interface AutomationRequest {
     name: string;
     phone: string;
     email?: string;
-    preferences?: any;
+    preferences?: Record<string, unknown>;
   }>;
-  data: any;
+  data: Record<string, unknown>;
   scheduledFor?: string;
 }
 
@@ -48,7 +48,7 @@ const validAutomationTypes = [
 ];
 
 // Generate retail-specific prompts
-function generateRetailPrompt(automationType: string, data: any): string {
+function generateRetailPrompt(automationType: string, data: Record<string, unknown>): string {
   const sanitizedData = {
     serviceType: sanitizeString(data?.serviceType || '', 100),
     orderNumber: sanitizeString(data?.orderNumber || 'XXX', 50),
@@ -151,7 +151,7 @@ Be professional, friendly, and helpful. Listen to the customer's needs and provi
 }
 
 // Schedule bulk calls
-async function scheduleBulkCalls(supabase: any, automation: AutomationRequest): Promise<any[]> {
+async function scheduleBulkCalls(supabase: Record<string, unknown>, automation: AutomationRequest): Promise<Record<string, unknown>[]> {
   const results = [];
   
   for (const customer of automation.customers) {
@@ -201,7 +201,7 @@ async function scheduleBulkCalls(supabase: any, automation: AutomationRequest): 
 }
 
 // Log automation campaign
-async function logAutomationCampaign(supabase: any, automation: AutomationRequest, results: any[]): Promise<void> {
+async function logAutomationCampaign(supabase: ReturnType<typeof createClient>, automation: AutomationRequest, results: Record<string, unknown>[]): Promise<void> {
   const successCount = results.filter(r => r.success).length;
   const totalCount = results.length;
   

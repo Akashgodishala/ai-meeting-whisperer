@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { Link } from 'react-router-dom';
 
 const scenarios = [
   {
@@ -139,9 +140,9 @@ export function LiveDemoSection() {
         </div>
 
         <div className="text-center mt-10">
-          <a href="#pricing" className="btn-accent-glow inline-flex items-center gap-2 text-base">
+          <Link to="/dashboard" className="btn-accent-glow inline-flex items-center gap-2 text-base">
             Want this for your business?
-          </a>
+          </Link>
         </div>
       </div>
     </section>
