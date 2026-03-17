@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,11 @@ const Index = () => {
   const { user, signOut } = useAuth();
 
   // Auto-close login dialog when user signs in
-  if (user && showLogin) setShowLogin(false);
+  useEffect(() => {
+    if (user && showLogin) {
+      setShowLogin(false);
+    }
+  }, [user, showLogin]);
 
   const handleSetupComplete = () => {
     setSetupDone(true);
