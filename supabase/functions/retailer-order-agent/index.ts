@@ -193,10 +193,9 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
           service_fee: serviceFee,
           driver_tip: driverTip,
           total_amount: totalAmount,
-          order_status: 'confirmed',
+          status: 'confirmed',
           call_session_id,
           delivery_address: deliveryAddress,
-          estimated_time: estimatedTime,
           notes: `Order placed via AI voice call. Details: ${orderDetails.substring(0, 300)}`,
           payment_status: 'pending'
         };

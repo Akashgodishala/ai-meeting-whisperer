@@ -49,10 +49,10 @@ interface Order {
   id: string;
   customer_phone: string;
   customer_name?: string;
-  order_items?: any;
+  items?: any;
   total_amount?: number;
   payment_status?: string;
-  order_status?: string;
+  status?: string;
   payment_method?: string;
   notes?: string;
   created_at: string;
@@ -188,9 +188,9 @@ function OrderDetailDialog({
 
   const items = (() => {
     try {
-      if (Array.isArray(order.order_items)) return order.order_items;
-      if (typeof order.order_items === "string") return JSON.parse(order.order_items);
-      if (order.order_items && typeof order.order_items === "object") return [order.order_items];
+      if (Array.isArray(order.items)) return order.items;
+      if (typeof order.items === "string") return JSON.parse(order.items);
+      if (order.items && typeof order.items === "object") return [order.items];
     } catch {}
     return [];
   })();
@@ -272,7 +272,7 @@ function OrderDetailDialog({
                 <Button
                   key={s}
                   size="sm"
-                  variant={order.order_status === s ? "default" : "outline"}
+                  variant={order.status === s ? "default" : "outline"}
                   className="capitalize text-xs"
                   onClick={() => {
                     onStatusChange(order.id, s);
@@ -329,10 +329,10 @@ export const OrderManagement = () => {
       // Compute stats
       const newStats: OrderStats = {
         total: rows.length,
-        pending: rows.filter((o) => o.order_status === "pending").length,
-        confirmed: rows.filter((o) => o.order_status === "confirmed").length,
-        fulfilled: rows.filter((o) => o.order_status === "fulfilled").length,
-        cancelled: rows.filter((o) => o.order_status === "cancelled").length,
+        pending: rows.filter((o) => o.status === "pending").length,
+        confirmed: rows.filter((o) => o.status === "confirmed").length,
+        fulfilled: rows.filter((o) => o.status === "fulfilled").length,
+        cancelled: rows.filter((o) => o.status === "cancelled").length,
         revenue: rows
           .filter((o) => o.payment_status === "paid" && o.total_amount)
           .reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0),
@@ -384,7 +384,7 @@ export const OrderManagement = () => {
     let result = [...orders];
 
     if (statusFilter !== "all") {
-      result = result.filter((o) => o.order_status === statusFilter);
+      result = result.filter((o) => o.status === statusFilter);
     }
 
     if (searchQuery.trim()) {
@@ -414,13 +414,13 @@ export const OrderManagement = () => {
     try {
       const { error } = await supabase
         .from("retailer_orders")
-        .update({ order_status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", orderId);
 
       if (error) throw error;
 
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, order_status: newStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
       toast.success(`Order status updated to "${newStatus}"`);
     } catch (err) {
@@ -650,11 +650,11 @@ export const OrderManagement = () => {
                         <Badge
                           variant="outline"
                           className={`text-xs capitalize border flex items-center gap-1 w-fit ${
-                            statusColors[order.order_status || "pending"]
+                            statusColors[order.status || "pending"]
                           }`}
                         >
-                          {statusIcons[order.order_status || "pending"]}
-                          {order.order_status || "pending"}
+                          {statusIcons[order.status || "pending"]}
+                          {order.status || "pending"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -668,7 +668,7 @@ export const OrderManagement = () => {
                             minute: "2-digit",
                           })}
                         </p>
-                        <PrepTimer createdAt={order.created_at} orderStatus={order.order_status} />
+                        <PrepTimer createdAt={order.created_at} orderStatus={order.status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
