@@ -111,6 +111,12 @@ serve(async (req) => {
       body: JSON.stringify({
         assistantId: assistantId,
         phoneNumberId: phoneNumberId,
+        metadata: {
+          retailer_id: customer.retailerId || '',
+          customer_name: sanitizedName,
+          customer_phone: formattedPhone,
+          business_name: businessName,
+        },
         customer: {
           number: formattedPhone
         },

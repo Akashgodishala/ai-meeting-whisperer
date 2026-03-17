@@ -350,6 +350,141 @@ serve(async (req) => {
           }
         }
         
+        // ── ORDER DETECTION AND PROCESSING ──────────────────────────────
+        // If the AI confirmed an order during the call, create it and send SMS
+        if (fullTranscript && fullTranscript.includes('ORDER_CONFIRMED')) {
+          console.log('🛒 ORDER_CONFIRMED detected in transcript — creating order');
+
+          const retailerId = call.metadata?.retailer_id || payload.metadata?.retailer_id || '';
+          const callerName = call.metadata?.customer_name || customerName;
+          const callerPhone = call.metadata?.customer_phone || sanitizedPhone;
+          const callerBusinessName = call.metadata?.business_name || '';
+
+          // Extract order details after ORDER_CONFIRMED
+          const orderMatch = fullTranscript.match(/ORDER_CONFIRMED[:\s]*(.+?)(?:\n|$)/i);
+          const orderDetails = orderMatch ? orderMatch[1].trim() : 'Order from phone call';
+
+          // Determine pickup vs delivery
+          const lowerTranscript = fullTranscript.toLowerCase();
+          const isDelivery = lowerTranscript.includes('delivery') || lowerTranscript.includes('deliver');
+          const orderType = isDelivery ? 'delivery' : 'pickup';
+          const estimatedTime = '15-20 minutes';
+
+          // Try to look up retailer for payment link and notification
+          let retailerPhone = '';
+          let paymentLink = '';
+
+          if (retailerId) {
+            const { data: retailer } = await supabase
+              .from('retailer_profiles')
+              .select('phone, payment_methods, business_name')
+              .eq('id', retailerId)
+              .single();
+
+            if (retailer) {
+              retailerPhone = retailer.phone || '';
+              const pm = retailer.payment_methods as Record<string, string> | null;
+              paymentLink = pm?.payment_link || pm?.stripe_link || '';
+              if (!callerBusinessName && retailer.business_name) {
+                // use retailer name for SMS
+              }
+            }
+          }
+
+          // Create the order in the database
+          const serviceFee = isDelivery ? 3.00 : 0;
+          const totalAmount = 25.00 + serviceFee; // Base amount; real amount comes from inventory matching
+
+          const { data: newOrder, error: orderError } = await supabase
+            .from('retailer_orders')
+            .insert({
+              retailer_id: retailerId || null,
+              customer_name: callerName,
+              customer_phone: callerPhone,
+              order_type: orderType,
+              items: [{ name: 'Order from call', details: orderDetails, price: 25.00, quantity: 1 }],
+              subtotal: 25.00,
+              service_fee: serviceFee,
+              driver_tip: 0,
+              total_amount: totalAmount,
+              order_status: 'confirmed',
+              estimated_time: estimatedTime,
+              payment_status: 'pending',
+              payment_link_url: paymentLink,
+              notes: `Auto-created from VAPI call ${callId}. Transcript: ${orderDetails.substring(0, 300)}`,
+              call_session_id: callId,
+            })
+            .select()
+            .single();
+
+          if (orderError) {
+            console.error('❌ Failed to create order from webhook:', orderError);
+          } else {
+            console.log('✅ Order created from call:', newOrder.id);
+
+            // Send SMS to CUSTOMER with payment link
+            if (callerPhone) {
+              const customerMsg = paymentLink
+                ? `Hi ${callerName}! Your order from ${callerBusinessName || 'us'} is confirmed. Total: $${totalAmount.toFixed(2)}. ${orderType === 'delivery' ? 'Estimated delivery' : 'Ready for pickup in'}: ${estimatedTime}. Pay here: ${paymentLink}`
+                : `Hi ${callerName}! Your order from ${callerBusinessName || 'us'} is confirmed. Total: $${totalAmount.toFixed(2)}. ${orderType === 'delivery' ? 'Estimated delivery' : 'Ready for pickup in'}: ${estimatedTime}. We will send you payment details shortly.`;
+
+              try {
+                const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+                const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN');
+                const twilioFrom = Deno.env.get('TWILIO_FROM_NUMBER');
+
+                if (twilioSid && twilioAuth && twilioFrom) {
+                  const formData = new URLSearchParams();
+                  formData.append('To', callerPhone);
+                  formData.append('From', twilioFrom);
+                  formData.append('Body', customerMsg);
+                  const smsResp = await fetch(
+                    `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Basic ${btoa(`${twilioSid}:${twilioAuth}`)}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                      },
+                      body: formData,
+                    }
+                  );
+                  console.log(smsResp.ok ? '✅ Customer SMS sent' : '❌ Customer SMS failed');
+                }
+              } catch (e) { console.error('SMS error:', e); }
+            }
+
+            // Send SMS to RETAILER
+            if (retailerPhone) {
+              try {
+                const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+                const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN');
+                const twilioFrom = Deno.env.get('TWILIO_FROM_NUMBER');
+
+                if (twilioSid && twilioAuth && twilioFrom) {
+                  const retailerMsg = `NEW ORDER!\nCustomer: ${callerName} (${callerPhone})\nDetails: ${orderDetails.substring(0, 200)}\nType: ${orderType.toUpperCase()}\nTotal: $${totalAmount.toFixed(2)}\nReady in: ${estimatedTime}`;
+                  const formData = new URLSearchParams();
+                  formData.append('To', retailerPhone);
+                  formData.append('From', twilioFrom);
+                  formData.append('Body', retailerMsg);
+                  await fetch(
+                    `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Basic ${btoa(`${twilioSid}:${twilioAuth}`)}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                      },
+                      body: formData,
+                    }
+                  );
+                  console.log('✅ Retailer notified via SMS');
+                }
+              } catch (e) { console.error('Retailer SMS error:', e); }
+            }
+          }
+        }
+
         console.log(`✅ Call session updated: ${callId} - Duration: ${duration}s`);
         break;
 
