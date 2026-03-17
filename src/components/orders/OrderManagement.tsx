@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,6 @@ import {
   Clock,
   Truck,
   Package,
-  TrendingUp,
   DollarSign,
   Phone,
   User,
@@ -41,6 +40,7 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
+  Timer,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -89,6 +89,58 @@ const statusIcons: Record<string, React.ReactNode> = {
   fulfilled: <Truck className="h-3.5 w-3.5" />,
   cancelled: <XCircle className="h-3.5 w-3.5" />,
 };
+
+// ─── Prep Timer ────────────────────────────────────────────────────────────────
+
+const PREP_MINUTES = 15;
+
+function PrepTimer({ createdAt, orderStatus }: { createdAt: string; orderStatus?: string }) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    // Only show timer for confirmed or processing orders
+    if (orderStatus !== "confirmed" && orderStatus !== "processing") {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const endTime = new Date(createdAt).getTime() + PREP_MINUTES * 60 * 1000;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    };
+
+    tick();
+    intervalRef.current = setInterval(tick, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [createdAt, orderStatus]);
+
+  if (secondsLeft === null) return null;
+
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+  const isUrgent = secondsLeft <= 120; // last 2 minutes
+  const isDone = secondsLeft === 0;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded ${
+        isDone
+          ? "bg-green-100 text-green-700"
+          : isUrgent
+          ? "bg-red-100 text-red-700 animate-pulse"
+          : "bg-orange-100 text-orange-700"
+      }`}
+    >
+      <Timer className="h-3 w-3" />
+      {isDone ? "Ready!" : `${mins}:${String(secs).padStart(2, "0")}`}
+    </span>
+  );
+}
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -302,7 +354,22 @@ export const OrderManagement = () => {
       .channel("retailer_orders_realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "retailer_orders" },
+        { event: "INSERT", schema: "public", table: "retailer_orders" },
+        (payload) => {
+          const newOrder = payload.new as Order;
+          toast.success(
+            `New order from ${newOrder.customer_name || newOrder.customer_phone}!`,
+            {
+              description: `Total: $${Number(newOrder.total_amount || 0).toFixed(2)} — Ready in ~15-20 min`,
+              duration: 8000,
+            }
+          );
+          loadOrders();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "retailer_orders" },
         () => loadOrders()
       )
       .subscribe();
@@ -601,6 +668,7 @@ export const OrderManagement = () => {
                             minute: "2-digit",
                           })}
                         </p>
+                        <PrepTimer createdAt={order.created_at} orderStatus={order.order_status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

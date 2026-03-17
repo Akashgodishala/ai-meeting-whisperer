@@ -1198,6 +1198,37 @@ export function RetailerDashboard() {
                   <p>Sunday: 10:00 AM - 8:00 PM</p>
                 </div>
               </div>
+
+              <div className="border-t pt-4">
+                <label className="text-sm font-semibold">Payment Link</label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  When a customer places an order, this link is sent to their phone via SMS. Use your Stripe, PayPal, Square, or any payment URL.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://buy.stripe.com/your-payment-link"
+                    defaultValue={(profile.payment_methods as any)?.payment_link || ''}
+                    id="payment-link-input"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const input = document.getElementById('payment-link-input') as HTMLInputElement;
+                      const link = input?.value?.trim();
+                      if (!link) { toast.error('Please enter a payment link'); return; }
+                      const currentMethods = (profile.payment_methods as Record<string, string>) || {};
+                      const { error } = await supabase
+                        .from('retailer_profiles')
+                        .update({ payment_methods: { ...currentMethods, payment_link: link } })
+                        .eq('id', profile.id);
+                      if (error) { toast.error('Failed to save payment link'); }
+                      else { toast.success('Payment link saved! Customers will receive this when they order.'); }
+                    }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
