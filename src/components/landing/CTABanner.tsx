@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { Link } from 'react-router-dom';
 
 export function CTABanner() {
   const { ref, isVisible } = useScrollReveal();
@@ -18,10 +19,10 @@ export function CTABanner() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="/dashboard" className="btn-accent-glow flex items-center gap-2 text-lg px-8 py-4">
+          <Link to="/dashboard" className="btn-accent-glow flex items-center gap-2 text-lg px-8 py-4">
             Start Free Trial
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </Link>
           <a
             href="mailto:hello@aimeeting.app"
             className="px-8 py-4 rounded-xl border-2 border-white/20 text-white font-semibold hover:bg-white/5 transition-colors text-lg"
