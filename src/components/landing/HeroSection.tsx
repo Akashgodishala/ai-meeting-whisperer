@@ -77,7 +77,7 @@ export function HeroSection() {
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-4">
-              <a href="#pricing" className="btn-accent-glow flex items-center gap-2 text-base">
+              <a href="/dashboard" className="btn-accent-glow flex items-center gap-2 text-base">
                 Try It Free — No Credit Card
                 <ArrowRight className="w-4 h-4" />
               </a>

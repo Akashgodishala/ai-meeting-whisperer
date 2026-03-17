@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, Mic } from 'lucide-react';
+import { Menu, X, Mic, LayoutDashboard } from 'lucide-react';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,14 +45,18 @@ export function Navbar() {
               key={link.label}
               href={link.href}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            
               {link.label}
             </a>
           )}
           <a
-            href="#pricing"
+            href="/dashboard"
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </a>
+          <a
+            href="/dashboard"
             className="btn-primary-glow text-sm !py-2.5 !px-5">
-            
             Start Free Trial
           </a>
         </div>
@@ -77,15 +81,20 @@ export function Navbar() {
             href={link.href}
             className="text-base font-medium text-foreground py-2"
             onClick={() => setIsOpen(false)}>
-            
                 {link.label}
               </a>
           )}
             <a
-            href="#pricing"
+            href="/dashboard"
+            className="text-base font-medium text-foreground py-2 flex items-center gap-2"
+            onClick={() => setIsOpen(false)}>
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </a>
+            <a
+            href="/dashboard"
             className="btn-primary-glow text-center text-sm mt-2"
             onClick={() => setIsOpen(false)}>
-            
               Start Free Trial
             </a>
           </div>

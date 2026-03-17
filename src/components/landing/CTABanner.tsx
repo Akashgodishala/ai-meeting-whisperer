@@ -18,7 +18,7 @@ export function CTABanner() {
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="#pricing" className="btn-accent-glow flex items-center gap-2 text-lg px-8 py-4">
+          <a href="/dashboard" className="btn-accent-glow flex items-center gap-2 text-lg px-8 py-4">
             Start Free Trial
             <ArrowRight className="w-5 h-5" />
           </a>

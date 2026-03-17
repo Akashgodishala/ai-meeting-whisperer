@@ -139,7 +139,7 @@ export function LiveDemoSection() {
         </div>
 
         <div className="text-center mt-10">
-          <a href="#pricing" className="btn-accent-glow inline-flex items-center gap-2 text-base">
+          <a href="/dashboard" className="btn-accent-glow inline-flex items-center gap-2 text-base">
             Want this for your business?
           </a>
         </div>

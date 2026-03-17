@@ -244,7 +244,7 @@ export function VapiLiveDemo() {
                     <Phone className="w-4 h-4" />
                     Try Again
                   </button>
-                  <a href="#pricing" className="btn-accent-glow flex items-center gap-2 px-6 py-3">
+                  <a href="/dashboard" className="btn-accent-glow flex items-center gap-2 px-6 py-3">
                     Start Free Trial
                   </a>
                 </div>

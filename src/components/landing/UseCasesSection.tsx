@@ -145,7 +145,7 @@ export function UseCasesSection() {
               </div>
 
               <a
-                href="#pricing"
+                href="/dashboard"
                 className="inline-flex items-center gap-2 mt-8 text-primary font-semibold hover:underline"
               >
                 See Demo for {industry.label} →
