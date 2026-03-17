@@ -377,31 +377,13 @@ serve(async (req) => {
           if (retailerId) {
             const { data: retailer } = await supabase
               .from('retailer_profiles')
-              .select('phone, payment_methods, business_name')
+              .select('phone, payment_link, business_name')
               .eq('id', retailerId)
               .single();
 
             if (retailer) {
               retailerPhone = retailer.phone || '';
-              const pm: any = retailer.payment_methods ?? null;
-              let derivedPaymentLink = '';
-              if (pm && typeof pm === 'object') {
-                if (Array.isArray(pm)) {
-                  // payment_methods is defined in migrations as a JSONB array.
-                  // Be backward-compatible by looking for an object element that has a payment link.
-                  const linkSource = pm.find((entry: any) =>
-                    entry && typeof entry === 'object' &&
-                    (entry.payment_link || entry.stripe_link)
-                  );
-                  if (linkSource) {
-                    derivedPaymentLink = linkSource.payment_link || linkSource.stripe_link || '';
-                  }
-                } else {
-                  // Handle object-shaped payment_methods for compatibility with existing code paths.
-                  derivedPaymentLink = pm.payment_link || pm.stripe_link || '';
-                }
-              }
-              paymentLink = derivedPaymentLink || '';
+              paymentLink = (retailer as any).payment_link || '';
               if (!callerBusinessName && retailer.business_name) {
                 // use retailer name for SMS
                 smsBusinessName = retailer.business_name;

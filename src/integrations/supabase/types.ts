@@ -1057,6 +1057,7 @@ export type Database = {
           created_at: string
           id: string
           operating_hours: Json | null
+          payment_link: string | null
           payment_methods: Json | null
           phone: string | null
           service_owner_id: string | null
@@ -1070,6 +1071,7 @@ export type Database = {
           created_at?: string
           id?: string
           operating_hours?: Json | null
+          payment_link?: string | null
           payment_methods?: Json | null
           phone?: string | null
           service_owner_id?: string | null
@@ -1083,6 +1085,7 @@ export type Database = {
           created_at?: string
           id?: string
           operating_hours?: Json | null
+          payment_link?: string | null
           payment_methods?: Json | null
           phone?: string | null
           service_owner_id?: string | null

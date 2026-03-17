@@ -21,6 +21,7 @@ interface RetailerProfile {
   business_type: string;
   phone: string;
   address: string;
+  payment_link: string | null;
   payment_methods: Record<string, unknown>;
   operating_hours: Record<string, unknown>;
 }
@@ -122,6 +123,9 @@ export function RetailerDashboard() {
   const [newItemCategory, setNewItemCategory] = useState("");
   const [newItemSize, setNewItemSize] = useState("");
 
+  // Payment link state
+  const [paymentLinkInput, setPaymentLinkInput] = useState("");
+
   useEffect(() => {
     if (user) {
       loadRetailerProfile();
@@ -147,6 +151,7 @@ export function RetailerDashboard() {
 
       if (data) {
         setProfile(data);
+        setPaymentLinkInput(data.payment_link ?? '');
       } else {
         setIsSetupMode(true);
       }
@@ -1223,22 +1228,23 @@ export function RetailerDashboard() {
                 <div className="flex gap-2">
                   <Input
                     placeholder="https://buy.stripe.com/your-payment-link"
-                    defaultValue={(profile.payment_methods as Record<string, unknown>)?.payment_link as string || ''}
-                    id="payment-link-input"
+                    value={paymentLinkInput}
+                    onChange={(e) => setPaymentLinkInput(e.target.value)}
                   />
                   <Button
                     size="sm"
                     onClick={async () => {
-                      const input = document.getElementById('payment-link-input') as HTMLInputElement;
-                      const link = input?.value?.trim();
+                      const link = paymentLinkInput.trim();
                       if (!link) { toast.error('Please enter a payment link'); return; }
-                      const currentMethods = (profile.payment_methods as Record<string, string>) || {};
                       const { error } = await supabase
                         .from('retailer_profiles')
-                        .update({ payment_methods: { ...currentMethods, payment_link: link } })
+                        .update({ payment_link: link })
                         .eq('id', profile.id);
                       if (error) { toast.error('Failed to save payment link'); }
-                      else { toast.success('Payment link saved! Customers will receive this when they order.'); }
+                      else {
+                        setProfile({ ...profile, payment_link: link });
+                        toast.success('Payment link saved! Customers will receive this when they order.');
+                      }
                     }}
                   >
                     Save

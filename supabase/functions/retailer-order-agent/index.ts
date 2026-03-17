@@ -207,24 +207,12 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
           .single();
 
         if (!orderError && order) {
-          // Use retailer's configured payment link from their profile (stored in payment_methods JSON)
+          // Use retailer's configured payment link from their profile (stored in the payment_link column)
           // Retailers set this in their dashboard under Settings > Payment Link
-          const rawPaymentMethods = retailer.payment_methods as unknown;
-          let configuredPaymentLink: string | null = null;
-
-          // Handle both object-shaped JSON (future/alternate schema) and the current array schema safely
-          if (
-            rawPaymentMethods &&
-            typeof rawPaymentMethods === "object" &&
-            !Array.isArray(rawPaymentMethods)
-          ) {
-            const methodsObj = rawPaymentMethods as { [key: string]: unknown };
-            const paymentLinkValue =
-              methodsObj["payment_link"] ?? methodsObj["stripe_link"];
-            if (typeof paymentLinkValue === "string" && paymentLinkValue.trim() !== "") {
-              configuredPaymentLink = paymentLinkValue;
-            }
-          }
+          const configuredPaymentLink: string | null =
+            (retailer as any).payment_link
+              ? String((retailer as any).payment_link).trim() || null
+              : null;
 
           // Use retailer's configured link (if any) or a generic order confirmation URL as fallback
           const paymentLink = configuredPaymentLink
