@@ -21,7 +21,7 @@ function isValidUUID(str: string): boolean {
 function validatePhoneNumber(phone: string): boolean {
   if (!phone) return false;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phone.replace(/[\s\-()]/g, ''));
+  return phoneRegex.test(phone.replace(/[\s()-]/g, ''));
 }
 
 function sanitizeString(str: string, maxLength: number): string {
