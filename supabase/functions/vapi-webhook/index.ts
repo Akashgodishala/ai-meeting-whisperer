@@ -396,26 +396,48 @@ serve(async (req) => {
           const serviceFee = isDelivery ? 3.00 : 0;
           const totalAmount = 25.00 + serviceFee; // Base amount; real amount comes from inventory matching
 
-          const { data: newOrder, error: orderError } = await supabase
+          // Ensure idempotency: avoid creating duplicate orders for the same call_session_id
+          let newOrder: any = null;
+          let orderError: any = null;
+
+          const { data: existingOrder, error: existingOrderError } = await supabase
             .from('retailer_orders')
-            .insert({
-              retailer_id: retailerId || null,
-              customer_name: callerName,
-              customer_phone: callerPhone,
-              order_type: orderType,
-              items: [{ name: 'Order from call', details: orderDetails, price: 25.00, quantity: 1 }],
-              subtotal: 25.00,
-              service_fee: serviceFee,
-              driver_tip: 0,
-              total_amount: totalAmount,
-              status: 'confirmed',
-              payment_status: 'pending',
-              payment_link_url: paymentLink,
-              notes: `Auto-created from VAPI call ${callId}. Transcript: ${orderDetails.substring(0, 300)}`,
-              call_session_id: callId,
-            })
-            .select()
-            .single();
+            .select('*')
+            .eq('call_session_id', callId)
+            .maybeSingle();
+
+          if (existingOrder) {
+            console.log('✅ Existing order found for call_session_id, skipping duplicate insert');
+            newOrder = existingOrder;
+          } else {
+            if (existingOrderError && existingOrderError.code !== 'PGRST116') {
+              console.error('Error checking for existing order by call_session_id', existingOrderError);
+            }
+
+            const { data, error } = await supabase
+              .from('retailer_orders')
+              .insert({
+                retailer_id: retailerId || null,
+                customer_name: callerName,
+                customer_phone: callerPhone,
+                order_type: orderType,
+                items: [{ name: 'Order from call', details: orderDetails, price: 25.00, quantity: 1 }],
+                subtotal: 25.00,
+                service_fee: serviceFee,
+                driver_tip: 0,
+                total_amount: totalAmount,
+                status: 'confirmed',
+                payment_status: 'pending',
+                payment_link_url: paymentLink,
+                notes: `Auto-created from VAPI call ${callId}. Transcript: ${orderDetails.substring(0, 300)}`,
+                call_session_id: callId,
+              })
+              .select()
+              .single();
+
+            newOrder = data;
+            orderError = error;
+          }
 
           if (orderError) {
             console.error('❌ Failed to create order from webhook:', orderError);
