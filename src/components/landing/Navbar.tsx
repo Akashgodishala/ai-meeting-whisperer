@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, Mic, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,17 +49,17 @@ export function Navbar() {
               {link.label}
             </a>
           )}
-          <a
-            href="/dashboard"
+          <Link
+            to="/dashboard"
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
-          </a>
-          <a
-            href="/dashboard"
+          </Link>
+          <Link
+            to="/dashboard"
             className="btn-primary-glow text-sm !py-2.5 !px-5">
             Start Free Trial
-          </a>
+          </Link>
         </div>
 
         {/* Mobile Hamburger */}
@@ -84,19 +85,19 @@ export function Navbar() {
                 {link.label}
               </a>
           )}
-            <a
-            href="/dashboard"
+            <Link
+            to="/dashboard"
             className="text-base font-medium text-foreground py-2 flex items-center gap-2"
             onClick={() => setIsOpen(false)}>
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
-            </a>
-            <a
-            href="/dashboard"
+            </Link>
+            <Link
+            to="/dashboard"
             className="btn-primary-glow text-center text-sm mt-2"
             onClick={() => setIsOpen(false)}>
               Start Free Trial
-            </a>
+            </Link>
           </div>
         </div>
       }
