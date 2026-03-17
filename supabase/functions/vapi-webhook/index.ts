@@ -387,6 +387,7 @@ serve(async (req) => {
               paymentLink = pm?.payment_link || pm?.stripe_link || '';
               if (!callerBusinessName && retailer.business_name) {
                 // use retailer name for SMS
+                smsBusinessName = retailer.business_name;
               }
             }
           }
