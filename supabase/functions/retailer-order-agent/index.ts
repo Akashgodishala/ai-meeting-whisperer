@@ -209,10 +209,24 @@ IMPORTANT: Use natural speech with contractions, occasional "um" or "let me see"
         if (!orderError && order) {
           // Use retailer's configured payment link from their profile (stored in payment_methods JSON)
           // Retailers set this in their dashboard under Settings > Payment Link
-          const paymentMethods = retailer.payment_methods as Record<string, string> | null;
-          const configuredPaymentLink = paymentMethods?.payment_link || paymentMethods?.stripe_link || null;
+          const rawPaymentMethods = retailer.payment_methods as unknown;
+          let configuredPaymentLink: string | null = null;
 
-          // Use retailer's configured link or a generic order confirmation URL as fallback
+          // Handle both object-shaped JSON (future/alternate schema) and the current array schema safely
+          if (
+            rawPaymentMethods &&
+            typeof rawPaymentMethods === "object" &&
+            !Array.isArray(rawPaymentMethods)
+          ) {
+            const methodsObj = rawPaymentMethods as { [key: string]: unknown };
+            const paymentLinkValue =
+              methodsObj["payment_link"] ?? methodsObj["stripe_link"];
+            if (typeof paymentLinkValue === "string" && paymentLinkValue.trim() !== "") {
+              configuredPaymentLink = paymentLinkValue;
+            }
+          }
+
+          // Use retailer's configured link (if any) or a generic order confirmation URL as fallback
           const paymentLink = configuredPaymentLink
             || `https://voxorbit.app/pay?order=${order.id}&amount=${totalAmount.toFixed(2)}`;
 
