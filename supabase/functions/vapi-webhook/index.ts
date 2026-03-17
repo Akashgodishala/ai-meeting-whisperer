@@ -383,18 +383,18 @@ serve(async (req) => {
 
             if (retailer) {
               retailerPhone = retailer.phone || '';
-              const pm: any = retailer.payment_methods ?? null;
+              const pm: Record<string, unknown>[] | Record<string, unknown> | null = (retailer.payment_methods as Record<string, unknown>[] | Record<string, unknown> | null) ?? null;
               let derivedPaymentLink = '';
               if (pm && typeof pm === 'object') {
                 if (Array.isArray(pm)) {
                   // payment_methods is defined in migrations as a JSONB array.
                   // Be backward-compatible by looking for an object element that has a payment link.
-                  const linkSource = pm.find((entry: any) =>
+                  const linkSource = (pm as Record<string, unknown>[]).find((entry: Record<string, unknown>) =>
                     entry && typeof entry === 'object' &&
-                    (entry.payment_link || entry.stripe_link)
+                    (entry['payment_link'] || entry['stripe_link'])
                   );
                   if (linkSource) {
-                    derivedPaymentLink = linkSource.payment_link || linkSource.stripe_link || '';
+                    derivedPaymentLink = (linkSource['payment_link'] || linkSource['stripe_link'] || '') as string;
                   }
                 } else {
                   // Handle object-shaped payment_methods for compatibility with existing code paths.
@@ -414,8 +414,8 @@ serve(async (req) => {
           const totalAmount = 25.00 + serviceFee; // Base amount; real amount comes from inventory matching
 
           // Ensure idempotency: avoid creating duplicate orders for the same call_session_id
-          let newOrder: any = null;
-          let orderError: any = null;
+          let newOrder: Record<string, unknown> | null = null;
+          let orderError: { code?: string; message?: string } | null = null;
 
           const { data: existingOrder, error: existingOrderError } = await supabase
             .from('retailer_orders')
